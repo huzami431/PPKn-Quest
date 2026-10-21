@@ -375,6 +375,16 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
   .banner{font-size:.5rem;top:6px}
   .fb{scroll-margin-top:300px}
 }
+
+/* ===== monster bergerak ===== */
+.pxm{transform-origin:50% 100%}
+.mv-float{animation:mfloat 2s steps(8) infinite}
+.mv-hop{animation:mhop 1.1s steps(1,end) infinite}
+.mv-heavy{animation:msway 2.4s steps(6) infinite}
+.foe.boss .pxm{animation-duration:1.6s}
+@keyframes mfloat{0%,100%{transform:translate(0,0)}25%{transform:translate(4px,-6px)}50%{transform:translate(0,-10px)}75%{transform:translate(-4px,-6px)}}
+@keyframes mhop{0%{transform:translate(0,0)}15%{transform:translate(0,-9px)}30%{transform:translate(0,0)}45%{transform:translate(0,-5px)}60%,100%{transform:translate(0,0)}}
+@keyframes msway{0%,100%{transform:translate(-3px,0) rotate(-2deg)}50%{transform:translate(3px,0) rotate(2deg)}}
 </style>
 </head>
 <body>
@@ -882,10 +892,22 @@ function hurtPose() { HP.pose = 'hurt'; paintHero(); setTimeout(function () { HP
 if (!reduced) setInterval(function () { if (HP.pose === 'idle') { HP.frame ^= 1; paintHero(); } }, 480);
 
 /* monster: SVG vektor diturunkan ke grid kecil, palet dikurangi, diberi outline */
-function pixelate(el, svg, boss) {
+var MV = { float: '👻🦇🛸👽😈👾', heavy: '🗿🐍🐉🧟🐺' };
+function moveOf(e) { var t = String(e).replace(/\uFE0F/g, ''); return MV.float.indexOf(t) >= 0 ? 'mv-float' : MV.heavy.indexOf(t) >= 0 ? 'mv-heavy' : 'mv-hop'; }
+var MON = { cv: null, base: null, f: 0, boss: false };
+if (!reduced) setInterval(function () {
+  var m = MON; if (!m.cv || !m.base || !m.cv.isConnected) return;
+  m.f = (m.f + 1) % 4;
+  var x = m.cv.getContext('2d'), w = m.cv.width, h = m.cv.height, k = m.boss ? 2 : 1;
+  x.imageSmoothingEnabled = false; x.clearRect(0, 0, w, h);
+  if (m.f === 1) x.drawImage(m.base, 0, 0, w, h, 0, k, w, h - k);          /* menciut */
+  else if (m.f === 3) x.drawImage(m.base, 0, 0, w, h, 0, -k, w, h + k);   /* meregang */
+  else x.drawImage(m.base, 0, 0);
+}, 240);
+function pixelate(el, svg, boss, emo) {
   var W = boss ? 56 : 40, tok = pixelate.t = (pixelate.t || 0) + 1, m = svg.match(/viewBox="0 0 (\d+) (\d+)"/) || [0, 100, 90];
   var Hh = Math.round(W * (+m[2]) / (+m[1])), cw = W + 2, ch = Hh + 2, cv = document.createElement('canvas');
-  cv.width = cw; cv.height = ch; cv.className = 'pxm'; el.replaceChildren(cv);
+  cv.width = cw; cv.height = ch; cv.className = 'pxm ' + moveOf(emo); el.replaceChildren(cv); MON = { cv: null, base: null, f: 0, boss: !!boss };
   var img = new Image();
   img.onload = function () {
     if (tok !== pixelate.t) return;
@@ -899,6 +921,8 @@ function pixelate(el, svg, boss) {
     function A(a, b) { return a < 0 || b < 0 || a >= cw || b >= ch ? 0 : p[(b * cw + a) * 4 + 3]; }
     for (Y = 0; Y < ch; Y++) for (X = 0; X < cw; X++) if (!A(X, Y) && (A(X - 1, Y) || A(X + 1, Y) || A(X, Y - 1) || A(X, Y + 1))) { i = (Y * cw + X) * 4; o[i] = 18; o[i + 1] = 10; o[i + 2] = 40; o[i + 3] = 255; }
     d.data.set(o); x.putImageData(d, 0, 0);
+    var bs = document.createElement('canvas'); bs.width = cw; bs.height = ch; bs.getContext('2d').drawImage(cv, 0, 0);
+    MON = { cv: cv, base: bs, f: 0, boss: !!boss };
   };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
@@ -1120,7 +1144,7 @@ function setScene(q) {
   // Render JRPG SVG sprite
   var sprEl = $('#e-spr');
   var svgFn = MSVG[E[1]] || MSVG['default'];
-  pixelate(sprEl, svgFn(!!q.boss), !!q.boss);
+  pixelate(sprEl, svgFn(!!q.boss), !!q.boss, E[1]);
   sprEl.className = 'spr-svg';
   [foe, $('#hero'), $('#e-spr'), $('#hero-spr')].forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
   $('#fx').replaceChildren();
