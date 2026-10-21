@@ -394,7 +394,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
       <div class="heroes" id="heroes" role="radiogroup" aria-label="Pilih pahlawan"></div>
       <div class="win in hd" id="hdetail"></div>
       <label class="fld" for="nm">Nama petualang
-        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Gugun Gendang" autocomplete="off">
+        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Dudung Gendang" autocomplete="off">
       </label>
       <div class="row"><button class="btn big" id="go" type="button">▶ Mulai petualangan</button></div>
     </div>
@@ -1023,7 +1023,7 @@ function shakeUnit(sel, filter) {
   if (sel === '#hero') { hurtPose(); sfx('hurt'); } else sfx('hit');
   if (reduced) return;
   $(sel).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(0)' }], { duration: 320 });
-  $(sel + ' .spr').animate([{ filter: 'brightness(1)' }, { filter: filter || 'brightness(3) saturate(0)' }, { filter: 'brightness(1)' }], { duration: 300 });
+  ($(sel + ' .spr') || $(sel + ' .spr-svg') || $(sel)).animate([{ filter: 'brightness(1)' }, { filter: filter || 'brightness(3) saturate(0)' }, { filter: 'brightness(1)' }], { duration: 300 });
 }
 
 /* ====== skill tiap pahlawan: promise selesai saat serangan mengenai musuh ====== */
@@ -1336,7 +1336,7 @@ async function check() {
   if (heal) S.hp = Math.min(100, S.hp + heal);
   S.log.push({ q: q, f: f, u: u, pts: pts });
 
-  await playTurn({ f: f, full: full, crit: crit, dmg: dmg, shielded: shielded, heal: heal, boss: !!q.boss, crystalBonus: crystalMult > 1 });
+  try { await playTurn({ f: f, full: full, crit: crit, dmg: dmg, shielded: shielded, heal: heal, boss: !!q.boss, crystalBonus: crystalMult > 1 }); } catch (err) { console.error(err); }
   S.done = true; S.busy = false;
   if (S.hp <= 0) S.over = true;
   hud(); itemState();
