@@ -847,7 +847,7 @@ var BODY = [
 "..oooooooooooo.."
 ];
 var PX = {
-  ksatria:  { p:{h:'#d4a72c',s:'#f1c08e',c:'#c0392b',d:'#7b1d1d',t:'#ffd24a',b:'#4a3320',x:'#e63946'}, w:{n:10,c:'#e8eeff',g:'#ffd24a'}, ov:[[0,5,'xxxx'],[1,4,'x']] },
+  ksatria:  { p:{h:'#d4a72c',s:'#f1c08e',c:'#c0392b',d:'#7b1d1d',t:'#ffd24a',b:'#4a3320',x:'#e63946',q:'#2b5fc4',y:'#ffffff'}, w:{n:10,c:'#e8eeff',g:'#ffd24a'}, ov:[[0,5,'xxxx'],[1,4,'x'],[10,-2,'.ooooo.'],[11,-2,'ogggggo'],[12,-2,'ogqyqgo'],[13,-2,'ogyyygo'],[14,-2,'.ogqgo.'],[15,-2,'..ooo..']] },
   penyihir: { p:{h:'#e8e8f5',s:'#f1c08e',c:'#5b3fc4',d:'#33217a',t:'#ffd24a',b:'#2a1a50',x:'#6a4bd8',y:'#ffe14a'}, w:{n:12,c:'#8b5a2b',t:'#49d6ff'}, ov:[[0,7,'oo'],[1,5,'oxxxxo'],[2,3,'oxxxxxxxxo'],[3,1,'oxxxxxxxxxxxxo'],[2,8,'y']] },
   tabib:    { p:{h:'#fff2b0',s:'#f6cfa6',c:'#f5f7ff',d:'#b9c6ea',t:'#ffd24a',b:'#8a6a3a',y:'#ffe14a'}, w:{n:11,c:'#d9a85a',t:'#6cf0a5'}, ov:[[3,0,'s'],[4,1,'s'],[3,15,'s'],[4,14,'s'],[7,2,'hh'],[8,3,'h'],[9,2,'hh'],[7,12,'hh'],[8,11,'h'],[0,4,'yyyyyyyy']] },
   ninja:    { p:{h:'#2b2f4a',s:'#f1c08e',c:'#2b2f4a',d:'#1b1e33',t:'#c0392b',b:'#14162a',x:'#e63946'}, w:{n:5,c:'#cfd8ff',g:'#c0392b'}, ov:[[3,2,'xxxxxxxxxxxx'],[4,0,'x'],[5,-1,'xx'],[6,-2,'xx'],[6,5,'dddddddd'],[7,5,'dddddd']] },
@@ -895,8 +895,8 @@ function heroCanvas(id, pose, frame, walk) {
   drawHero(c.getContext('2d'), id, pose === 0 ? 'idle' : pose, frame || 0); return c;
 }
 function portrait(id) {
-  var t = heroCanvas(id, 0, 0), c = document.createElement('canvas'); c.width = 14; c.height = 12; c.className = 'pxh';
-  c.getContext('2d').drawImage(t, 5, 3, 14, 12, 0, 0, 14, 12); return c;
+  var t = heroCanvas(id, 0, 0), c = document.createElement('canvas'); c.width = 14; c.height = 10; c.className = 'pxh';
+  c.getContext('2d').drawImage(t, 5, 3, 14, 10, 0, 0, 14, 10); return c;
 }
 var HP = { id: 'ksatria', pose: 'idle', frame: 0, cv: document.createElement('canvas') };
 HP.cv.width = 28; HP.cv.height = 26; HP.cv.className = 'pxh';
