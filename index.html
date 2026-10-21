@@ -276,6 +276,86 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;max-width:min(92vw,460px);
   font-size:.95rem;color:#fff;background:linear-gradient(var(--wa),var(--wb));border:3px solid var(--edge);border-radius:8px;box-shadow:0 0 0 3px var(--ink),4px 5px 0 rgba(0,0,0,.5);padding:10px 16px;animation:pop .25s ease-out}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ===== JRPG ENHANCED ===== */
+/* Monster SVG sprites */
+.spr-svg { display:block; line-height:1; filter:drop-shadow(0 6px 0 rgba(0,0,0,.45)); animation:bob 1.8s ease-in-out infinite; }
+.foe .spr-svg { animation-delay:-.7s; }
+.foe.boss .spr-svg { transform-origin:center bottom; }
+
+/* Impact flash overlay */
+.impact-flash { position:absolute;inset:0;z-index:5;pointer-events:none;background:white;opacity:0; }
+
+/* Charge glow on hero before attack */
+@keyframes charge { 0%{filter:brightness(1) drop-shadow(0 0 0px transparent)}60%{filter:brightness(1.9) drop-shadow(0 0 18px var(--gold))}100%{filter:brightness(1)} }
+.charging { animation:charge .55s ease-out forwards; }
+
+/* Monster defeat fragments */
+.frag { position:absolute; pointer-events:none; will-change:transform,opacity; }
+
+/* Battle shockwave ring */
+.shockwave { position:absolute; border-radius:50%; pointer-events:none; }
+
+/* Item: Petir Sila */
+.btn.petir { color:var(--tx); background:linear-gradient(#1a2aff,#0d0f8a); border-color:#7eb3ff; }
+.btn.petir:hover:not([disabled]) { border-color:#fff; }
+/* Item: Kristal Kuno */
+.btn.kristal { color:#fff; background:linear-gradient(#8a2be2,#4b006e); border-color:#e0a0ff; }
+.btn.kristal:hover:not([disabled]) { border-color:#fff; }
+/* Buff text chip */
+.buff-chip { display:inline-block; font-family:var(--px); font-size:.5rem; padding:2px 7px; border-radius:4px; background:rgba(138,43,226,.35); border:1px solid #c080ff; color:#e0c0ff; margin-left:6px; animation:blink 1.4s steps(2) infinite; }
+
+/* HUD item badges */
+.hud-items { display:flex; gap:8px; flex-wrap:wrap; }
+.hud-items .itm { display:flex; flex-direction:column; align-items:flex-end; line-height:1.3; }
+.hud-items .itm small { font-family:var(--px); font-size:.5rem; color:var(--mut); }
+.hud-items .itm b { font-family:var(--px); font-weight:400; font-size:.75rem; color:var(--gold); }
+
+/* JRPG damage number styles */
+.num.crit  { color:#ff9b2f; font-size:1.3rem !important; }
+.num.heal  { color:#3ce27a; }
+.num.miss  { color:#b6bfff; }
+
+/* Skill flash full-screen tint */
+.skill-tint { position:fixed; inset:0; pointer-events:none; z-index:50; opacity:0; }
+
+/* Scene lightning overlay */
+@keyframes lightning { 0%{opacity:0}10%{opacity:.85}20%{opacity:.2}30%{opacity:.9}60%{opacity:0} }
+.lightning-bg { position:absolute;inset:0;background:rgba(120,180,255,.55);z-index:4;pointer-events:none;animation:lightning .55s forwards; }
+
+/* Monster HP bar flash when hit */
+@keyframes ehp-flash { 0%,100%{opacity:1}50%{opacity:.3} }
+.ehp-hit { animation:ehp-flash .28s ease-out 2; }
+
+/* Keyword glitter on power words */
+@keyframes glitter { 0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 8px var(--gold),0 0 18px var(--gold)} }
+
+
+/* ===== 16-BIT ===== */
+canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+.win,.btn,.opt,.cmd,.chip,input[type=text],select,.bar,.ehp,.port,.rules>div,.lb li,.g4 .box,.fb,.fb .exp,.pas,.scene,.toast,details.rv,.hc .card,.win.in,.live,.banner,.bd,.loot span,.opt .key,.bk-row .t,.lb li{border-radius:0!important}
+.win{border-width:4px;box-shadow:0 0 0 4px var(--ink),inset 0 0 0 3px var(--bevel),6px 6px 0 4px rgba(0,0,0,.5)}
+.btn{border-width:4px;transition:none;box-shadow:0 0 0 3px var(--ink),0 5px 0 3px #8a4a00}
+.btn.alt{box-shadow:0 0 0 3px var(--ink),0 5px 0 3px #0a1050}
+.btn:active:not([disabled]){transform:translate(0,4px);box-shadow:0 0 0 3px var(--ink),0 1px 0 3px #8a4a00}
+.scene{border-width:4px;background:#000}
+#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom}
+.decor,.gr{display:none}
+.scene::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+.bar,.ehp{position:relative}
+.bar::after,.ehp::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 6px,rgba(0,0,0,.4) 6px 8px)}
+.unit.hero{left:6%;width:auto}
+.unit .spr{line-height:0}
+.unit.hero .pxh{width:clamp(100px,20vw,150px);height:auto;display:block}
+.pxm{width:clamp(84px,17vw,132px);height:auto;display:block}
+.foe.boss .pxm{width:clamp(130px,26vw,200px)}
+.hc .card .pxh{width:72px;height:auto}
+.hd .big{line-height:0}
+.hd .big .pxh{width:110px;height:auto}
+.port{padding:0;overflow:hidden;line-height:0}
+.port .pxh{width:100%;height:auto}
+.res-top .port{width:96px;height:96px}
+.logo .eyebrow{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -284,7 +364,7 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
   <!-- MULAI -->
   <section id="s-start" class="stack">
     <header class="logo">
-      <div class="eyebrow">Pendidikan Pancasila · Materi TKA SMA/MA/SMK</div>
+      <div class="eyebrow">Pendidikan Pancasila · Materi TKA SMA/MA/SMK · 16-BIT EDITION</div>
       <h1>PPKn<br><span>QUEST</span></h1>
       <p class="sub">Legenda Nusantara</p>
       <p class="lead">Pilih pahlawan, jelajahi empat area, dan kalahkan monster ancaman bangsa dengan jawaban yang tepat. Setiap jawaban benar memunculkan skill unik pahlawanmu. Jawaban salah membuat musuh menyerang, jadi jaga HP-mu sampai bertemu Naga Disintegrasi.</p>
@@ -295,7 +375,7 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
       <div class="heroes" id="heroes" role="radiogroup" aria-label="Pilih pahlawan"></div>
       <div class="win in hd" id="hdetail"></div>
       <label class="fld" for="nm">Nama petualang
-        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Dudung Api" autocomplete="off">
+        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Rapsanjani" autocomplete="off">
       </label>
       <div class="row"><button class="btn big" id="go" type="button">▶ Mulai petualangan</button></div>
     </div>
@@ -306,7 +386,7 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
         <div><b>4 area, 20 soal</b>Hutan Sila, Benteng Konstitusi, Lembah Bhinneka, lalu Menara Nusantara dengan boss di soal terakhir.</div>
         <div><b>Jawaban benar</b>Pahlawan memakai skill, musuh dikalahkan, dan skor bertambah. Bonus cepat dalam 25 detik dan bonus beruntun dari 3 jawaban benar.</div>
         <div><b>Jawaban salah</b>Musuh menyerang. HP berkurang 15, boss 25. HP habis berarti petualangan berakhir.</div>
-        <div><b>Item</b>🧪 Ramuan memulihkan 30 HP. 📜 Gulungan 50:50 menyingkirkan dua pilihan salah. Setiap area bersih memberi 1 ramuan.</div>
+        <div><b>Item</b>🧪 Ramuan memulihkan 30 HP. 📜 Gulungan 50:50 menyingkirkan dua pilihan salah. ⚡ Petir Sila menyengat musuh dan membakar 20% HP-nya. 🔮 Kristal Kuno menggandakan skor satu ronde. Setiap area bersih memberi 1 ramuan.</div>
         <div><b>Soal sulit</b>Studi kasus dengan pilihan yang mirip, pilihan kompleks, sebab-akibat, klasifikasi, menjodohkan, dan isian.</div>
         <div><b>Skor maksimal 300</b>Nilai 0–100 dihitung dari poin dasar jawaban. Skor akhir dikirim ke papan pahlawan yang diperbarui langsung (live) lewat Supabase Realtime.</div>
       </div>
@@ -325,7 +405,7 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
       <div class="hud-m">
         <div class="lbl"><span>HP</span><span id="h-hp">100/100</span></div>
         <div class="bar"><i id="h-bar"></i></div>
-        <div class="meta"><span>Lv <b id="h-lv">1</b></span><span>Combo ×<b id="h-combo">0</b></span><span>🧪 <b id="h-pot">2</b></span><span>📜 <b id="h-scr">2</b></span><span>🏆 #<b id="h-rank">–</b></span></div>
+        <div class="meta"><span>Lv <b id="h-lv">1</b></span><span>Combo ×<b id="h-combo">0</b></span><span>🧪 <b id="h-pot">2</b></span><span>📜 <b id="h-scr">2</b></span><span>⚡ <b id="h-blt">2</b></span><span>🔮 <b id="h-cry">1</b></span><span>🏆 #<b id="h-rank">–</b></span></div>
       </div>
       <div class="hud-r">
         <div class="st"><small>SKOR</small><b id="h-score">0</b></div>
@@ -334,12 +414,15 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
     </div>
 
     <div class="scene a0" id="scene">
+      <canvas id="bg" width="224" height="80"></canvas>
       <div class="decor" id="decor"></div>
       <div class="gr"></div>
       <div class="banner" id="banner"></div>
-      <div class="unit hero" id="hero"><div class="spr" id="hero-spr">🦸</div><div class="sh"></div></div>
+      <div class="unit hero" id="hero"><div class="spr" id="hero-spr"></div><div class="sh"></div></div>
       <div class="unit foe" id="foe"><div class="ename" id="e-name"></div><div class="ehp"><i id="e-hp"></i></div><div class="spr" id="e-spr">👻</div><div class="sh"></div></div>
       <div id="fx"></div>
+      <div class="impact-flash" id="impact-flash"></div>
+      <div class="skill-tint" id="skill-tint"></div>
     </div>
 
     <div class="win qwin" id="qcard"></div>
@@ -355,7 +438,7 @@ details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
 'use strict';
 
 /* ====== SUPABASE (dari file sebelumnya) ====== */
-var CFG = { url: 'https://leouknqxxehhrxhtbtgv.supabase.co', key: 'sb_publishable_ZywNjZGLrf5lQlXW7VqrHA_05Ju42rk', table: 'skor_kuis' };
+var CFG = { url: 'https://cvkvsidmrcoqqbubqwoe.supabase.co', key: 'sb_publishable_0uIfl5wTEJjLuO6O69e8Vw_zKYyalUT', table: 'skor_kuis' };
 var ON = !/PROJECT-ID|ANON_PUBLIC_KEY/.test(CFG.url + CFG.key);
 var MAXSCORE = 300;
 
@@ -674,6 +757,166 @@ var Q = [
     x: 'Disintegrasi sering berakar pada ketidakadilan pembangunan. Pemerintah menjawabnya dengan dialog, pemerataan, dan otonomi khusus (Pasal 18B mengakui satuan pemerintahan daerah yang bersifat khusus atau istimewa), tanpa mengubah bentuk NKRI yang menurut Pasal 37 ayat (5) tidak dapat diubah. Urusan pertahanan dan politik luar negeri tetap menjadi urusan pemerintah pusat.' }
 ];
 
+
+/* ===== JRPG SVG Monster Library ===== */
+var MSVG = {
+  /* ─ Area 0: Hutan Sila ─ */
+  '👻': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.1+'" viewBox="0 0 80 88" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g0" cx="50%" cy="40%"><stop offset="0%" stop-color="#cdd8ff"/><stop offset="100%" stop-color="#5560cc"/></radialGradient></defs><ellipse cx="40" cy="36" rx="32" ry="30" fill="url(#g0)" opacity=".92"/><path d="M8 36 Q8 72 20 76 Q26 80 30 72 Q34 80 40 72 Q46 80 52 72 Q58 80 64 72 Q72 72 72 50 L72 36 Q72 6 40 6 Q8 6 8 36Z" fill="url(#g0)" opacity=".95"/><ellipse cx="28" cy="34" rx="8" ry="9" fill="#1a1a60"/><ellipse cx="52" cy="34" rx="8" ry="9" fill="#1a1a60"/><ellipse cx="30" cy="32" rx="3" ry="4" fill="#ff3060"/><ellipse cx="54" cy="32" rx="3" ry="4" fill="#ff3060"/><ellipse cx="31" cy="31" rx="1.5" ry="2" fill="#fff"/><ellipse cx="55" cy="31" rx="1.5" ry="2" fill="#fff"/><path d="M32 52 Q40 58 48 52" stroke="#1a1a60" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M8 55 Q4 68 12 74" stroke="#8888ee" stroke-width="1.8" fill="none" opacity=".6"/><path d="M72 55 Q76 68 68 74" stroke="#8888ee" stroke-width="1.8" fill="none" opacity=".6"/></svg>'; },
+  '👹': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.15+'" viewBox="0 0 80 92" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g1" cx="45%" cy="35%"><stop offset="0%" stop-color="#ff7755"/><stop offset="100%" stop-color="#aa1100"/></radialGradient></defs><path d="M10 20 L20 6 L26 18 M70 20 L60 6 L54 18" stroke="#cc3300" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="50" rx="33" ry="36" fill="url(#g1)"/><ellipse cx="24" cy="42" rx="11" ry="12" fill="#ffe0d0" opacity=".3"/><ellipse cx="56" cy="42" rx="11" ry="12" fill="#ffe0d0" opacity=".3"/><ellipse cx="24" cy="42" rx="7" ry="8" fill="#110000"/><ellipse cx="56" cy="42" rx="7" ry="8" fill="#110000"/><ellipse cx="26" cy="40" rx="2.5" ry="3" fill="#ff0"/><ellipse cx="58" cy="40" rx="2.5" ry="3" fill="#ff0"/><path d="M28 62 L32 56 L40 60 L48 56 L52 62 L44 68 L40 66 L36 68 Z" fill="#fff0c0" stroke="#550000" stroke-width="1"/><rect x="35" y="60" width="10" height="4" rx="1" fill="#ff4400" opacity=".5"/><path d="M18 55 Q8 52 6 44" stroke="#ff4400" stroke-width="2.5" fill="none" opacity=".7"/><path d="M62 55 Q72 52 74 44" stroke="#ff4400" stroke-width="2.5" fill="none" opacity=".7"/></svg>'; },
+  '🦇': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*.8+'" viewBox="0 0 90 72" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#330044"/><stop offset="100%" stop-color="#6600aa"/></linearGradient></defs><path d="M45 36 Q20 10 0 20 Q10 30 14 36 Q6 36 2 46 Q16 42 22 50 Q32 44 38 40Z" fill="url(#g2)"/><path d="M45 36 Q70 10 90 20 Q80 30 76 36 Q84 36 88 46 Q74 42 68 50 Q58 44 52 40Z" fill="url(#g2)"/><ellipse cx="45" cy="38" rx="12" ry="14" fill="#440066"/><ellipse cx="39" cy="34" rx="4" ry="5" fill="#ffcc00"/><ellipse cx="51" cy="34" rx="4" ry="5" fill="#ffcc00"/><ellipse cx="39" cy="34" rx="2" ry="3" fill="#220033"/><ellipse cx="51" cy="34" rx="2" ry="3" fill="#220033"/><path d="M40 44 L43 48 L45 46 L47 48 L50 44" stroke="#cc88ff" stroke-width="1.5" fill="none"/></svg>'; },
+  '🐍': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*.75+'" viewBox="0 0 90 68" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#004400"/><stop offset="50%" stop-color="#008800"/><stop offset="100%" stop-color="#004400"/></linearGradient></defs><path d="M10 50 Q20 20 45 24 Q70 28 78 14 Q80 8 74 8 Q66 8 62 16 Q50 8 30 12 Q8 16 4 40 Q2 54 10 58 Q20 62 26 52 Q28 48 24 46 Q16 44 10 50Z" fill="url(#g3)" stroke="#002200" stroke-width="1.5"/><ellipse cx="72" cy="12" rx="8" ry="7" fill="#006600"/><ellipse cx="68" cy="9" rx="3" ry="3.5" fill="#ffff00"/><ellipse cx="76" cy="9" rx="3" ry="3.5" fill="#ffff00"/><ellipse cx="68.5" cy="9" rx="1.5" ry="2" fill="#000"/><ellipse cx="76.5" cy="9" rx="1.5" ry="2" fill="#000"/><path d="M68 17 L72 20 L76 17" stroke="#ff4444" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M22 48 Q26 42 34 44 Q42 46 50 38 Q58 30 66 34" stroke="#00cc00" stroke-width="2" fill="none" opacity=".4"/></svg>'; },
+  '🐺': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.1+'" viewBox="0 0 80 88" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g4" cx="50%" cy="40%"><stop offset="0%" stop-color="#888"/><stop offset="100%" stop-color="#333"/></radialGradient></defs><path d="M15 30 L22 12 L30 26 M65 30 L58 12 L50 26" stroke="#555" stroke-width="3" fill="#888" stroke-linejoin="round"/><ellipse cx="40" cy="52" rx="28" ry="30" fill="url(#g4)"/><ellipse cx="40" cy="42" rx="22" ry="20" fill="#777"/><ellipse cx="27" cy="40" rx="9" ry="10" fill="#1a1a1a"/><ellipse cx="53" cy="40" rx="9" ry="10" fill="#1a1a1a"/><ellipse cx="29" cy="38" rx="3" ry="4" fill="#ffee00"/><ellipse cx="55" cy="38" rx="3" ry="4" fill="#ffee00"/><ellipse cx="40" cy="52" rx="12" ry="10" fill="#bbb" opacity=".4"/><path d="M34 56 Q37 52 40 54 Q43 52 46 56" stroke="#444" stroke-width="2" fill="none"/><ellipse cx="40" cy="58" rx="4" ry="3" fill="#cc4444"/><path d="M14 60 Q6 70 10 78" stroke="#666" stroke-width="2.5" fill="none"/><path d="M66 60 Q74 70 70 78" stroke="#666" stroke-width="2.5" fill="none"/></svg>'; },
+
+  /* ─ Area 1: Benteng Konstitusi ─ */
+  '🕷️': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*.9+'" viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g5" cx="50%" cy="50%"><stop offset="0%" stop-color="#222"/><stop offset="100%" stop-color="#000"/></radialGradient></defs><line x1="40" y1="28" x2="10" y2="10" stroke="#1a1a1a" stroke-width="3"/><line x1="40" y1="28" x2="0" y2="30" stroke="#1a1a1a" stroke-width="3"/><line x1="40" y1="28" x2="8" y2="52" stroke="#1a1a1a" stroke-width="3"/><line x1="40" y1="28" x2="70" y2="10" stroke="#1a1a1a" stroke-width="3"/><line x1="40" y1="28" x2="80" y2="30" stroke="#1a1a1a" stroke-width="3"/><line x1="40" y1="28" x2="72" y2="52" stroke="#1a1a1a" stroke-width="3"/><line x1="40" y1="36" x2="20" y2="70" stroke="#1a1a1a" stroke-width="2.5"/><line x1="40" y1="36" x2="60" y2="70" stroke="#1a1a1a" stroke-width="2.5"/><ellipse cx="40" cy="32" rx="20" ry="22" fill="url(#g5)"/><circle cx="32" cy="26" r="4" fill="#ff0000"/><circle cx="48" cy="26" r="4" fill="#ff0000"/><circle cx="28" cy="32" r="2.5" fill="#ff4444"/><circle cx="52" cy="32" r="2.5" fill="#ff4444"/><circle cx="30" cy="38" r="2" fill="#ff6666"/><circle cx="50" cy="38" r="2" fill="#ff6666"/><ellipse cx="40" cy="42" rx="8" ry="6" fill="#111"/><path d="M35 48 L37 44 L40 46 L43 44 L45 48" stroke="#ff2200" stroke-width="1.5" fill="none"/></svg>'; },
+  '🦂': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*.85+'" viewBox="0 0 80 68" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff8800"/><stop offset="100%" stop-color="#884400"/></linearGradient></defs><path d="M50 40 Q60 32 70 36 Q74 44 68 50 Q62 56 56 52 Q52 48 50 40Z" fill="url(#g6)"/><path d="M56 46 Q66 40 72 30 Q74 20 68 16 Q64 20 64 30 Q60 36 56 46" fill="none" stroke="#ff6600" stroke-width="3" stroke-linecap="round"/><circle cx="67" cy="14" r="5" fill="#ff4400"/><circle cx="67" cy="14" r="2" fill="#ffcc00"/><ellipse cx="35" cy="44" rx="26" ry="20" fill="url(#g6)"/><ellipse cx="35" cy="36" rx="18" ry="14" fill="#ff6600"/><line x1="18" y1="38" x2="6" y2="28" stroke="#884400" stroke-width="2.5"/><line x1="18" y1="44" x2="4" y2="44" stroke="#884400" stroke-width="2.5"/><line x1="18" y1="50" x2="6" y2="60" stroke="#884400" stroke-width="2.5"/><line x1="50" y1="38" x2="58" y2="28" stroke="#884400" stroke-width="2.5"/><line x1="50" y1="44" x2="62" y2="44" stroke="#884400" stroke-width="2.5"/><ellipse cx="28" cy="34" rx="5" ry="6" fill="#220000"/><ellipse cx="42" cy="34" rx="5" ry="6" fill="#220000"/><ellipse cx="29" cy="33" rx="2" ry="2.5" fill="#ffcc00"/><ellipse cx="43" cy="33" rx="2" ry="2.5" fill="#ffcc00"/></svg>'; },
+  '🗿': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.3+'" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g7" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#888"/><stop offset="100%" stop-color="#444"/></linearGradient></defs><rect x="12" y="8" width="46" height="76" rx="8" fill="url(#g7)"/><rect x="6" y="16" width="58" height="64" rx="6" fill="#777"/><rect x="10" y="20" width="50" height="56" rx="5" fill="url(#g7)"/><ellipse cx="28" cy="38" rx="10" ry="8" fill="#333"/><ellipse cx="42" cy="38" rx="10" ry="8" fill="#333"/><ellipse cx="28" cy="38" rx="5" ry="4" fill="#ff4400" opacity=".8"/><ellipse cx="42" cy="38" rx="5" ry="4" fill="#ff4400" opacity=".8"/><rect x="22" y="52" width="26" height="6" rx="2" fill="#333"/><rect x="26" y="54" width="18" height="2" rx="1" fill="#666"/><line x1="10" y1="44" x2="2" y2="56" stroke="#555" stroke-width="4" stroke-linecap="round"/><line x1="60" y1="44" x2="68" y2="56" stroke="#555" stroke-width="4" stroke-linecap="round"/><path d="M18 30 Q22 22 28 26" stroke="#aaa" stroke-width="1.5" fill="none" opacity=".5"/><path d="M52 30 Q48 22 42 26" stroke="#aaa" stroke-width="1.5" fill="none" opacity=".5"/></svg>'; },
+  '💀': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.05+'" viewBox="0 0 70 74" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g8" cx="50%" cy="40%"><stop offset="0%" stop-color="#e8e8d0"/><stop offset="100%" stop-color="#9a9a80"/></radialGradient></defs><ellipse cx="35" cy="32" rx="30" ry="28" fill="url(#g8)"/><ellipse cx="22" cy="32" rx="10" ry="12" fill="#1a1a1a"/><ellipse cx="48" cy="32" rx="10" ry="12" fill="#1a1a1a"/><ellipse cx="22" cy="32" rx="5" ry="6" fill="#0000cc" opacity=".7"/><ellipse cx="48" cy="32" rx="5" ry="6" fill="#0000cc" opacity=".7"/><path d="M20 46 L20 56 L26 56 L26 50 L30 50 L30 56 L36 56 L36 50 L40 50 L40 56 L46 56 L46 50 L50 50 L50 56 L50 46 Z" fill="#c8c8b0"/><path d="M35 42 L35 56" stroke="#9a9a80" stroke-width="2"/><path d="M27 44 L27 56" stroke="#9a9a80" stroke-width="1.5"/><path d="M43 44 L43 56" stroke="#9a9a80" stroke-width="1.5"/><ellipse cx="35" cy="22" rx="6" ry="4" fill="#aaa" opacity=".3"/><path d="M26 20 Q28 14 35 16 Q42 14 44 20" stroke="#bbb" stroke-width="1.5" fill="none" opacity=".4"/></svg>'; },
+  '🧟': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.2+'" viewBox="0 0 70 84" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g9" cx="45%" cy="35%"><stop offset="0%" stop-color="#7a9a6a"/><stop offset="100%" stop-color="#3a5a2a"/></radialGradient></defs><ellipse cx="35" cy="26" rx="24" ry="24" fill="url(#g9)"/><path d="M12 50 Q8 64 14 74 L22 80 L22 60Z" fill="#4a7a3a"/><path d="M58 50 Q62 64 56 74 L48 80 L48 60Z" fill="#4a7a3a"/><rect x="16" y="48" width="38" height="32" rx="4" fill="url(#g9)"/><ellipse cx="24" cy="24" rx="8" ry="9" fill="#1a1a1a"/><ellipse cx="46" cy="24" rx="8" ry="9" fill="#1a1a1a"/><ellipse cx="26" cy="22" rx="3" ry="3.5" fill="#ff2200"/><ellipse cx="48" cy="22" rx="3" ry="3.5" fill="#ff2200"/><path d="M26 38 Q30 34 35 36 Q40 34 44 38" stroke="#2a4a1a" stroke-width="2" fill="none"/><path d="M8 44 Q2 52 8 58" stroke="#4a7a3a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M62 44 Q68 52 62 58" stroke="#4a7a3a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M18 20 Q20 10 28 14" stroke="#8ab87a" stroke-width="1.5" fill="none" opacity=".5"/></svg>'; },
+
+  /* ─ Area 2: Lembah Bhinneka ─ */
+  '👺': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.15+'" viewBox="0 0 80 92" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ga" cx="50%" cy="38%"><stop offset="0%" stop-color="#ff4444"/><stop offset="100%" stop-color="#880000"/></radialGradient></defs><path d="M22 16 L28 4 L34 16 M46 16 L52 4 L58 16" stroke="#cc2200" stroke-width="3" fill="#ff2200"/><ellipse cx="40" cy="52" rx="34" ry="36" fill="url(#ga)"/><ellipse cx="40" cy="42" rx="26" ry="22" fill="#cc2200" opacity=".4"/><rect x="10" y="28" width="60" height="8" rx="3" fill="#550000" opacity=".5"/><ellipse cx="26" cy="42" rx="10" ry="11" fill="#110000"/><ellipse cx="54" cy="42" rx="10" ry="11" fill="#110000"/><ellipse cx="28" cy="40" rx="4" ry="5" fill="#ffcc00"/><ellipse cx="56" cy="40" rx="4" ry="5" fill="#ffcc00"/><path d="M26 62 L30 54 L40 58 L50 54 L54 62 L46 70 L40 68 L34 70Z" fill="#ffddaa" stroke="#550000" stroke-width="1.5"/><path d="M12 66 Q4 64 2 54" stroke="#cc0000" stroke-width="2.5" fill="none"/><path d="M68 66 Q76 64 78 54" stroke="#cc0000" stroke-width="2.5" fill="none"/></svg>'; },
+  '😈': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.1+'" viewBox="0 0 80 88" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="gb" cx="50%" cy="42%"><stop offset="0%" stop-color="#9933ff"/><stop offset="100%" stop-color="#440088"/></radialGradient></defs><path d="M10 22 Q4 8 16 10 Q22 12 28 24 M70 22 Q76 8 64 10 Q58 12 52 24" stroke="#6600bb" stroke-width="3" fill="#6600cc"/><ellipse cx="40" cy="50" rx="32" ry="34" fill="url(#gb)"/><ellipse cx="40" cy="40" rx="24" ry="20" fill="#7722ee" opacity=".3"/><ellipse cx="27" cy="40" rx="9" ry="10" fill="#1a0030"/><ellipse cx="53" cy="40" rx="9" ry="10" fill="#1a0030"/><ellipse cx="29" cy="38" rx="3.5" ry="4" fill="#ffff00"/><ellipse cx="55" cy="38" rx="3.5" ry="4" fill="#ffff00"/><path d="M28 58 Q34 64 40 62 Q46 64 52 58" stroke="#220044" stroke-width="2.5" fill="none"/><path d="M32 60 L34 66 L38 62 L40 66 L42 62 L46 66 L48 60" stroke="#220044" stroke-width="1.5" fill="none"/><path d="M10 58 Q2 60 4 68" stroke="#7722ee" stroke-width="2.5" fill="none"/><path d="M70 58 Q78 60 76 68" stroke="#7722ee" stroke-width="2.5" fill="none"/></svg>'; },
+  '😡': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="gc"><stop offset="0%" stop-color="#ff8800"/><stop offset="100%" stop-color="#cc4400"/></radialGradient></defs><circle cx="40" cy="40" r="36" fill="url(#gc)"/><path d="M20 28 Q30 20 38 26" stroke="#550000" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M60 28 Q50 20 42 26" stroke="#550000" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="34" rx="8" ry="9" fill="#220000"/><ellipse cx="50" cy="34" rx="8" ry="9" fill="#220000"/><ellipse cx="30" cy="34" rx="4" ry="5" fill="#ff3300"/><ellipse cx="50" cy="34" rx="4" ry="5" fill="#ff3300"/><path d="M26 54 Q32 50 40 52 Q48 50 54 54" stroke="#550000" stroke-width="3" fill="none"/><path d="M30 56 L34 62 L40 58 L46 62 L50 56" stroke="#550000" stroke-width="2" fill="none"/></svg>'; },
+
+  /* ─ Area 3: Menara Nusantara (NKRI) ─ */
+  '🛸': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*.65+'" viewBox="0 0 90 58" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gd" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#88aaff"/><stop offset="100%" stop-color="#2244cc"/></linearGradient></defs><ellipse cx="45" cy="40" rx="42" ry="14" fill="url(#gd)"/><ellipse cx="45" cy="38" rx="42" ry="14" fill="#3355dd"/><ellipse cx="45" cy="40" rx="42" ry="12" fill="url(#gd)"/><ellipse cx="45" cy="24" rx="22" ry="16" fill="#5577ee"/><ellipse cx="45" cy="22" rx="18" ry="12" fill="#88aaff"/><ellipse cx="38" cy="18" rx="6" ry="5" fill="#ccddff" opacity=".7"/><circle cx="20" cy="42" r="4" fill="#00ffff" opacity=".8"/><circle cx="35" cy="46" r="4" fill="#00ff88" opacity=".8"/><circle cx="55" cy="46" r="4" fill="#ffff00" opacity=".8"/><circle cx="70" cy="42" r="4" fill="#ff88ff" opacity=".8"/><ellipse cx="45" cy="50" rx="30" ry="5" fill="#00ccff" opacity=".2"/></svg>'; },
+  '👽': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.15+'" viewBox="0 0 70 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ge" cx="50%" cy="42%"><stop offset="0%" stop-color="#aaffaa"/><stop offset="100%" stop-color="#226622"/></radialGradient></defs><ellipse cx="35" cy="30" rx="30" ry="26" fill="url(#ge)"/><ellipse cx="22" cy="28" rx="13" ry="14" fill="#002200"/><ellipse cx="48" cy="28" rx="13" ry="14" fill="#002200"/><ellipse cx="22" cy="28" rx="7" ry="8" fill="#00cc44" opacity=".8"/><ellipse cx="48" cy="28" rx="7" ry="8" fill="#00cc44" opacity=".8"/><ellipse cx="24" cy="26" rx="3" ry="3.5" fill="#88ffaa"/><ellipse cx="50" cy="26" rx="3" ry="3.5" fill="#88ffaa"/><path d="M28 46 Q32 42 35 44 Q38 42 42 46" stroke="#006600" stroke-width="1.5" fill="none"/><path d="M12 52 Q4 56 2 48" stroke="#66aa66" stroke-width="2.5" fill="none"/><path d="M58 52 Q66 56 68 48" stroke="#66aa66" stroke-width="2.5" fill="none"/><ellipse cx="35" cy="54" rx="8" ry="6" fill="#338833" opacity=".5"/></svg>'; },
+  '🤖': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*1.2+'" viewBox="0 0 70 84" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gf" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#aabbcc"/><stop offset="100%" stop-color="#556677"/></linearGradient></defs><rect x="28" y="2" width="14" height="10" rx="3" fill="#778899"/><rect x="33" y="10" width="4" height="6" fill="#99aacc"/><rect x="10" y="16" width="50" height="42" rx="6" fill="url(#gf)"/><rect x="14" y="20" width="18" height="16" rx="4" fill="#111"/><rect x="38" y="20" width="18" height="16" rx="4" fill="#111"/><rect x="16" y="22" width="14" height="12" rx="3" fill="#0044ff" opacity=".7"/><rect x="40" y="22" width="14" height="12" rx="3" fill="#ff4400" opacity=".7"/><rect x="22" y="44" width="26" height="8" rx="2" fill="#333"/><rect x="24" y="46" width="6" height="4" rx="1" fill="#00ff00"/><rect x="32" y="46" width="6" height="4" rx="1" fill="#ff0000"/><rect x="40" y="46" width="6" height="4" rx="1" fill="#0088ff"/><rect x="4" y="20" width="6" height="30" rx="3" fill="#778899"/><rect x="60" y="20" width="6" height="30" rx="3" fill="#778899"/><rect x="16" y="58" width="16" height="26" rx="4" fill="#667788"/><rect x="38" y="58" width="16" height="26" rx="4" fill="#667788"/></svg>'; },
+  '👾': function(boss){ var s=boss?130:80; return '<svg width="'+s+'" height="'+s*.85+'" viewBox="0 0 80 68" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff44aa"/><stop offset="100%" stop-color="#8800aa"/></linearGradient></defs><rect x="18" y="8" width="44" height="8" rx="2" fill="url(#gg)"/><rect x="10" y="16" width="60" height="8" rx="2" fill="url(#gg)"/><rect x="2" y="24" width="76" height="8" rx="2" fill="url(#gg)"/><rect x="2" y="32" width="76" height="8" rx="2" fill="url(#gg)"/><rect x="10" y="40" width="60" height="8" rx="2" fill="url(#gg)"/><rect x="2" y="48" width="24" height="8" rx="2" fill="url(#gg)"/><rect x="54" y="48" width="24" height="8" rx="2" fill="url(#gg)"/><rect x="2" y="56" width="12" height="8" rx="2" fill="url(#gg)"/><rect x="66" y="56" width="12" height="8" rx="2" fill="url(#gg)"/><rect x="26" y="24" width="8" height="8" fill="#1a0030"/><rect x="46" y="24" width="8" height="8" fill="#1a0030"/><rect x="28" y="26" width="4" height="4" fill="#ff88ff"/><rect x="48" y="26" width="4" height="4" fill="#ff88ff"/><rect x="32" y="40" width="16" height="4" fill="#1a0030"/><rect x="34" y="40" width="4" height="4" fill="#ff0"/><rect x="42" y="40" width="4" height="4" fill="#ff0"/></svg>'; },
+  '🐉': function(boss){ var s=boss?160:100; return '<svg width="'+s+'" height="'+s*.9+'" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="gh" cx="45%" cy="38%"><stop offset="0%" stop-color="#ff6600"/><stop offset="100%" stop-color="#880000"/></radialGradient><radialGradient id="gi" cx="50%" cy="50%"><stop offset="0%" stop-color="#ffaa00"/><stop offset="100%" stop-color="#ff4400"/></radialGradient></defs><path d="M50 20 Q80 10 88 28 Q90 40 78 46 Q70 50 60 44 Q54 40 50 44" fill="#cc3300" stroke="#880000" stroke-width="1.5"/><path d="M60 10 L68 2 L72 12" stroke="#cc3300" stroke-width="2.5" fill="#990000"/><path d="M80 14 L86 8 L84 18" stroke="#cc3300" stroke-width="2.5" fill="#990000"/><ellipse cx="80" cy="32" rx="12" ry="10" fill="url(#gh)"/><ellipse cx="72" cy="28" rx="7" ry="8" fill="#110000"/><ellipse cx="86" cy="28" rx="7" ry="8" fill="#110000"/><ellipse cx="74" cy="26" rx="3" ry="4" fill="#ffcc00"/><ellipse cx="88" cy="26" rx="3" ry="4" fill="#ffcc00"/><ellipse cx="74.5" cy="26" rx="1.5" ry="2" fill="#000"/><ellipse cx="88.5" cy="26" rx="1.5" ry="2" fill="#000"/><path d="M74 38 L80 44 L86 38" stroke="#ff4400" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M50 44 Q30 50 18 42 Q6 34 8 20 Q10 8 24 6 Q38 4 46 16" fill="#cc2200" stroke="#880000" stroke-width="1.5"/><path d="M20 58 Q10 70 16 80 L26 78 Q22 70 28 60Z" fill="#aa2200"/><path d="M50 52 Q42 68 46 80 L56 76 Q52 66 58 56Z" fill="#aa2200"/><path d="M14 42 Q4 48 8 58" stroke="#cc3300" stroke-width="3" fill="none"/><path d="M50 44 Q50 56 44 64 Q54 66 58 58 Q62 50 54 44Z" fill="url(#gi)" opacity=".8"/><ellipse cx="34" cy="28" rx="10" ry="8" fill="#992200" opacity=".5"/><path d="M20 30 Q22 22 30 24" stroke="#ff6644" stroke-width="1.5" fill="none" opacity=".5"/></svg>'; }
+};
+/* default fallback ghost */
+MSVG['default'] = MSVG['👻'];
+
+/* ====== 16-BIT: sprite pahlawan full body, monster terpikselkan, latar, sfx ====== */
+var BODY = [
+"................",
+"....oooooooo....",
+"...ohhhhhhhho...",
+"..ohhhhhhhhhho..",
+"..ohhhsssssshho.",
+"..ohhsseessssho.",
+"..ohhsssssssso..",
+"...oossssssoo...",
+".....ossssoo....",
+"...ooccccccoo...",
+"..occcttttccco..",
+".osoccccccccoso.",
+".osoccccccccoso.",
+".oooccccccccooo.",
+"...otttttttto...",
+"...oddddddddo...",
+"...odddoodddo...",
+"...odddoodddo...",
+"...odddoodddo...",
+"...obbboobbbo...",
+"..obbbboobbbbo..",
+"..oooooooooooo.."
+];
+var PX = {
+  ksatria:  { p:{h:'#d4a72c',s:'#f1c08e',c:'#c0392b',d:'#7b1d1d',t:'#ffd24a',b:'#4a3320',x:'#e63946'}, w:{n:10,c:'#e8eeff',g:'#ffd24a'}, ov:[[0,5,'xxxx'],[1,4,'x']] },
+  penyihir: { p:{h:'#e8e8f5',s:'#f1c08e',c:'#5b3fc4',d:'#33217a',t:'#ffd24a',b:'#2a1a50',x:'#6a4bd8',y:'#ffe14a'}, w:{n:12,c:'#8b5a2b',t:'#49d6ff'}, ov:[[0,7,'oo'],[1,5,'oxxxxo'],[2,3,'oxxxxxxxxo'],[3,1,'oxxxxxxxxxxxxo'],[2,8,'y']] },
+  tabib:    { p:{h:'#fff2b0',s:'#f6cfa6',c:'#f5f7ff',d:'#b9c6ea',t:'#ffd24a',b:'#8a6a3a',y:'#ffe14a'}, w:{n:11,c:'#d9a85a',t:'#6cf0a5'}, ov:[[3,0,'s'],[4,1,'s'],[3,15,'s'],[4,14,'s'],[7,2,'hh'],[8,3,'h'],[9,2,'hh'],[7,12,'hh'],[8,11,'h'],[0,4,'yyyyyyyy']] },
+  ninja:    { p:{h:'#2b2f4a',s:'#f1c08e',c:'#2b2f4a',d:'#1b1e33',t:'#c0392b',b:'#14162a',x:'#e63946'}, w:{n:5,c:'#cfd8ff',g:'#c0392b'}, ov:[[3,2,'xxxxxxxxxxxx'],[4,0,'x'],[5,-1,'xx'],[6,-2,'xx'],[6,5,'dddddddd'],[7,5,'dddddd']] },
+  penyair:  { p:{h:'#3a2410',s:'#e9b787',c:'#8b5a2b',d:'#3a2410',t:'#ffd24a',b:'#2a1a0c',x:'#c0392b',y:'#ffd24a'}, w:{n:6,c:'#d9a85a',t:'#ffd24a'}, ov:[[1,3,'oxxxxxxxxo'],[2,2,'xxxxxxxxxxxx'],[0,10,'yy'],[1,11,'y']] },
+  peri:     { p:{h:'#ff8fd0',s:'#ffd9bf',c:'#6ad0ff',d:'#3a86c8',t:'#ffffff',b:'#c06aa8',y:'#bff4ff'}, w:{n:9,c:'#fff7d6',t:'#ffd24a'}, bk:[[6,-1,'yy'],[7,-3,'yyyyy'],[8,-4,'yyyyyy'],[9,-4,'yyyyyy'],[10,-3,'yyyyy'],[11,-2,'yyyy'],[12,-1,'yy']], ov:[[7,2,'hh'],[8,2,'h'],[9,3,'h']] }
+};
+function drawHero(ctx, id, pose, frame) {
+  var D = PX[id], P = Object.assign({ o:'#14102a', e:'#14102a', g:'#ffd24a' }, D.p), W = D.w;
+  var ox = pose === 'atk' ? 6 : pose === 'hurt' ? 3 : 4, dy = (frame && pose === 'idle') ? 1 : 0;
+  ctx.clearRect(0, 0, 28, 24);
+  function put(c, x, y) { if (c !== '.' && P[c]) { ctx.fillStyle = P[c]; ctx.fillRect(x, y, 1, 1); } }
+  function strip(a) { for (var i = 0; i < a[2].length; i++) put(a[2][i], ox + a[1] + i, a[0] + (a[0] < 16 ? dy : 0)); }
+  function px(c, x, y) { ctx.fillStyle = c; ctx.fillRect(ox + x, y, 1, 1); }
+  (D.bk || []).forEach(strip);
+  BODY.forEach(function (r, y) { strip([y, 0, r]); });
+  (D.ov || []).forEach(strip);
+  var n = W.n, k;
+  if (pose === 'atk') {
+    var m = Math.min(n, 7);
+    for (k = 0; k < m; k++) px(W.c, 15 + k, 11);
+    if (W.g) { for (k = 10; k <= 12; k++) px(W.g, 15, k); }
+    else { px(W.t, 15 + m, 11); px(W.t, 15 + m, 10); px(W.t, 14 + m, 10); px(W.t, 14 + m, 11); }
+  } else {
+    for (k = 0; k < n; k++) px(W.c, 14, 13 - k + dy);
+    if (W.g) { for (k = 13; k <= 15; k++) px(W.g, k, 12 + dy); }
+    else { px(W.t, 14, 13 - n + dy); px(W.t, 15, 13 - n + dy); px(W.t, 14, 12 - n + dy); px(W.t, 15, 12 - n + dy); }
+  }
+  if (pose === 'hurt') { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(255,60,60,.5)'; ctx.fillRect(0, 0, 28, 24); ctx.globalCompositeOperation = 'source-over'; }
+}
+function heroCanvas(id, pose, frame) {
+  var c = document.createElement('canvas'); c.width = 28; c.height = 24; c.className = 'pxh';
+  drawHero(c.getContext('2d'), id, pose === 0 ? 'idle' : pose, frame || 0); return c;
+}
+function portrait(id) {
+  var t = heroCanvas(id, 0, 0), c = document.createElement('canvas'); c.width = 14; c.height = 12; c.className = 'pxh';
+  c.getContext('2d').drawImage(t, 5, 0, 14, 12, 0, 0, 14, 12); return c;
+}
+var HP = { id: 'ksatria', pose: 'idle', frame: 0, cv: document.createElement('canvas') };
+HP.cv.width = 28; HP.cv.height = 24; HP.cv.className = 'pxh';
+function paintHero() { drawHero(HP.cv.getContext('2d'), HP.id, HP.pose, HP.frame); }
+function hurtPose() { HP.pose = 'hurt'; paintHero(); setTimeout(function () { HP.pose = 'idle'; paintHero(); }, 380); }
+if (!reduced) setInterval(function () { if (HP.pose === 'idle') { HP.frame ^= 1; paintHero(); } }, 480);
+
+/* monster: SVG vektor diturunkan ke grid kecil, palet dikurangi, diberi outline */
+function pixelate(el, svg, boss) {
+  var W = boss ? 56 : 40, tok = pixelate.t = (pixelate.t || 0) + 1, m = svg.match(/viewBox="0 0 (\d+) (\d+)"/) || [0, 100, 90];
+  var Hh = Math.round(W * (+m[2]) / (+m[1])), cw = W + 2, ch = Hh + 2, cv = document.createElement('canvas');
+  cv.width = cw; cv.height = ch; cv.className = 'pxm'; el.replaceChildren(cv);
+  var img = new Image();
+  img.onload = function () {
+    if (tok !== pixelate.t) return;
+    var x = cv.getContext('2d'); x.drawImage(img, 1, 1, W, Hh);
+    var d = x.getImageData(0, 0, cw, ch), p = d.data, o = new Uint8ClampedArray(p), i, j, X, Y;
+    for (i = 0; i < p.length; i += 4) {
+      if (p[i + 3] < 110) { p[i + 3] = 0; continue; }
+      p[i + 3] = 255; for (j = 0; j < 3; j++) p[i + j] = Math.min(255, Math.round(p[i + j] / 48) * 48);
+    }
+    o.set(p);
+    function A(a, b) { return a < 0 || b < 0 || a >= cw || b >= ch ? 0 : p[(b * cw + a) * 4 + 3]; }
+    for (Y = 0; Y < ch; Y++) for (X = 0; X < cw; X++) if (!A(X, Y) && (A(X - 1, Y) || A(X + 1, Y) || A(X, Y - 1) || A(X, Y + 1))) { i = (Y * cw + X) * 4; o[i] = 18; o[i + 1] = 10; o[i + 2] = 40; o[i + 3] = 255; }
+    d.data.set(o); x.putImageData(d, 0, 0);
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+/* latar 16-bit per area (224x80, digambar prosedural) */
+var BGP = [
+  { t: 't', sky: ['#4aa6c9', '#6fc0d6', '#93d6dc', '#b6e6d0', '#cdf0c4'], far: '#3f9a63', mid: '#2a7a46', obj: '#14472b', g1: '#6cc04a', g2: '#2e7d32', g3: '#25652a' },
+  { t: 'c', sky: ['#1f1650', '#2e2070', '#43308f', '#5d44a8', '#7a58b0'], far: '#4a4390', mid: '#3a3470', obj: '#2a2550', g1: '#9a96c4', g2: '#6b6794', g3: '#55527a', stars: 1 },
+  { t: 'g', sky: ['#ff7a45', '#ff9a5a', '#ffb86c', '#ffd98a', '#ffe9ad'], far: '#c0607a', mid: '#8a4a86', obj: '#d8353a', g1: '#a56ac0', g2: '#6a3f86', g3: '#573270' },
+  { t: 'v', sky: ['#12062e', '#2a0a3a', '#4a0f35', '#6a1330', '#8a1a2a'], far: '#5a1830', mid: '#3a1020', obj: '#2a0b18', g1: '#9a2a2a', g2: '#58161f', g3: '#7a2a18', stars: 1 }
+];
+function drawBG(a) {
+  var cv = $('#bg'), x = cv.getContext('2d'), W = 224, H = 80, GY = 50, P = BGP[a], seed = a * 97 + 13, i, px, py;
+  function R() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  function rc(c, X, Y, w, h) { x.fillStyle = c; x.fillRect(X, Y, w, h); }
+  var bh = Math.ceil(GY / P.sky.length);
+  P.sky.forEach(function (c, k) { rc(c, 0, k * bh, W, bh); if (k) for (var q = 0; q < W; q += 2) rc(c, q + (k % 2), k * bh - 1, 1, 1); });
+  if (P.stars) for (i = 0; i < 40; i++) rc('#fff', R() * W | 0, R() * 30 | 0, 1, 1);
+  for (px = 0; px < W; px++) { var y1 = GY - 16 - Math.round(8 * Math.sin(px / 17 + a) + 5 * Math.sin(px / 7 + a * 2)); rc(P.far, px, y1, 1, GY - y1); }
+  for (px = 0; px < W; px++) { var y2 = GY - 7 - Math.round(4 * Math.sin(px / 11 + a * 3) + 2 * Math.sin(px / 5)); rc(P.mid, px, y2, 1, GY - y2); }
+  if (P.t === 't') for (px = 4; px < W; px += 14 + (R() * 10 | 0)) { var th = 16 + (R() * 10 | 0); for (i = 0; i < th; i += 2) { var tw = 1 + (i >> 1); rc(P.obj, px - tw, GY - th + i, 2 * tw + 1, 2); } rc('#4a2f1a', px, GY - 3, 2, 3); }
+  if (P.t === 'c') for (px = 8; px < W; px += 52) { rc(P.obj, px, GY - 26, 30, 26); for (i = 0; i < 30; i += 6) rc(P.obj, px + i, GY - 30, 3, 4); rc(P.obj, px + 10, GY - 40, 10, 40); rc(P.obj, px + 9, GY - 43, 12, 3); rc('#ffd24a', px + 14, GY - 24, 2, 4); rc('#ffd24a', px + 14, GY - 34, 2, 4); }
+  if (P.t === 'g') for (px = 20; px < W; px += 60) { rc(P.obj, px, GY - 24, 3, 24); rc(P.obj, px + 16, GY - 24, 3, 24); rc(P.obj, px - 3, GY - 27, 25, 3); rc(P.obj, px, GY - 20, 19, 2); }
+  if (P.t === 'v') { for (i = 0; i < 38; i++) { var vw = (i * 1.5) | 0; rc(P.obj, 150 - vw, GY - 38 + i, 2 * vw, 1); } rc('#ff6a1a', 144, GY - 38, 12, 2); rc('#ffd24a', 147, GY - 39, 6, 1); rc(P.obj, 36, GY - 46, 12, 46); rc('#ff9b2f', 40, GY - 38, 3, 4); rc('#ff9b2f', 40, GY - 26, 3, 4); }
+  rc(P.g1, 0, GY, W, 3); rc(P.g2, 0, GY + 3, W, H - GY - 3);
+  for (py = GY + 7; py < H; py += 8) for (px = ((py - GY) / 8 | 0) % 2 * 8; px < W; px += 16) { rc(P.g3, px, py, 8, 1); rc(P.g3, px, py - 7, 1, 8); }
+  for (i = 0; i < 26; i++) rc(P.g1, R() * W | 0, GY + 4 + (R() * (H - GY - 6) | 0), 2, 1);
+}
+
+var AC = null;
+function sfx(k) {
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.resume) AC.resume();
+    var seq = { hit: [[880, .05], [1320, .08]], hurt: [[170, .09], [110, .16]], click: [[660, .04]] }[k], t = AC.currentTime;
+    seq.forEach(function (n) { var o = AC.createOscillator(), g = AC.createGain(); o.type = 'square'; o.frequency.value = n[0];
+      g.gain.setValueAtTime(.04, t); g.gain.exponentialRampToValueAtTime(.001, t + n[1]); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + n[1]); t += n[1]; });
+  } catch (e) {}
+}
+document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.opt,.cmd,.btn')) sfx('click'); });
+
 /* ====== preferensi ====== */
 var KEY = 'ppkn-quest-v1', pref = {};
 try { pref = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
@@ -683,7 +926,7 @@ $('#nm').value = pref.n || '';
 
 function showDetail() {
   var H = heroOf(heroId);
-  $('#hdetail').replaceChildren(h('div', { class: 'big', 'aria-hidden': 'true' }, H.ico),
+  $('#hdetail').replaceChildren(h('div', { class: 'big', 'aria-hidden': 'true' }, heroCanvas(H.id, 0, 0)),
     h('div', {}, h('p', {}, h('b', {}, H.name), ' · ' + H.role),
       h('p', {}, h('b', {}, 'Skill: '), H.skill),
       h('p', {}, h('b', {}, H.perk + ': '), H.desc)));
@@ -691,7 +934,7 @@ function showDetail() {
 HEROES.forEach(function (H) {
   var i = h('input', { type: 'radio', name: 'hero', value: H.id, 'aria-label': H.name, onchange: function () { heroId = H.id; showDetail(); } });
   if (H.id === heroId) i.checked = true;
-  $('#heroes').append(h('label', { class: 'hc' }, i, h('span', { class: 'card' }, h('span', { class: 'e' }, H.ico), H.name)));
+  $('#heroes').append(h('label', { class: 'hc' }, i, h('span', { class: 'card' }, h('span', { class: 'e' }, heroCanvas(H.id, 0, 0)), H.name)));
 });
 showDetail();
 function show(id) { ['start', 'quiz', 'result'].forEach(function (s) { $('#s-' + s).hidden = s !== id; }); window.scrollTo(0, 0); }
@@ -755,6 +998,7 @@ function lunge(sel, dx) {
   $(sel).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + dx + 'px)', offset: .45 }, { transform: 'translateX(' + dx + 'px)', offset: .62 }, { transform: 'translateX(0)' }], { duration: 760, easing: 'ease-in-out' });
 }
 function shakeUnit(sel, filter) {
+  if (sel === '#hero') { hurtPose(); sfx('hurt'); } else sfx('hit');
   if (reduced) return;
   $(sel).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(0)' }], { duration: 320 });
   $(sel + ' .spr').animate([{ filter: 'brightness(1)' }, { filter: filter || 'brightness(3) saturate(0)' }, { filter: 'brightness(1)' }], { duration: 300 });
@@ -827,10 +1071,10 @@ function startGame() {
   var name = ($('#nm').value || '').trim() || 'Petualang';
   try { localStorage.setItem(KEY, JSON.stringify({ n: ($('#nm').value || '').trim(), h: heroId })); } catch (e) {}
   var H = heroOf(heroId), b = build();
-  S = { hero: H, name: name, hp: 100, potions: 2, scrolls: H.id === 'penyihir' ? 4 : 2, lv: 1, score: 0, base: 0, streak: 0, best: 0, full: 0,
+  S = { hero: H, name: name, hp: 100, potions: 2, scrolls: H.id === 'penyihir' ? 4 : 2, bolts: 2, crystals: 1, crystalActive: false, lv: 1, score: 0, base: 0, streak: 0, best: 0, full: 0,
     order: b.order, inArea: b.inArea, i: 0, log: [], shield: {}, t0: Date.now(), qt: Date.now(), done: false, busy: false, over: false, saved: false };
-  $('#h-port').textContent = H.ico; $('#h-name').textContent = name; $('#h-class').textContent = H.name + ' · ' + H.skill;
-  $('#hero-spr').textContent = H.ico;
+  $('#h-port').replaceChildren(portrait(H.id)); $('#h-name').textContent = name; $('#h-class').textContent = H.name + ' · ' + H.skill;
+  HP.id = H.id; HP.pose = 'idle'; $('#hero-spr').replaceChildren(HP.cv); paintHero();
   show('quiz'); renderQ(true);
   clearInterval(timer); timer = setInterval(function () { $('#h-time').textContent = fmt(Date.now() - S.t0); }, 500);
 }
@@ -844,12 +1088,17 @@ function hud() {
 function setScene(q) {
   var A = AREAS[q.a], E = A.E[S.inArea[S.i]];
   var sc = $('#scene'); sc.className = 'scene a' + q.a;
-  $('#decor').textContent = A.decor;
+  drawBG(q.a);
   var foe = $('#foe'); foe.className = 'unit foe' + (q.boss ? ' boss' : ''); foe.style.visibility = '';
   $('#e-name').textContent = (q.boss ? 'BOSS · ' : '') + E[0];
   $('#e-spr').textContent = E[1];
   $('#e-hp').style.width = '100%';
-  [foe, $('#hero'), $('#e-spr'), $('#hero-spr')].forEach(function (n) { n.getAnimations().forEach(function (a) { if (a.fill === 'forwards' || a.fill === 'both' || true) a.cancel(); }); });
+  // Render JRPG SVG sprite
+  var sprEl = $('#e-spr');
+  var svgFn = MSVG[E[1]] || MSVG['default'];
+  pixelate(sprEl, svgFn(!!q.boss), !!q.boss);
+  sprEl.className = 'spr-svg';
+  [foe, $('#hero'), $('#e-spr'), $('#hero-spr')].forEach(function (n) { n.getAnimations().forEach(function (a) { a.cancel(); }); });
   $('#fx').replaceChildren();
 }
 
@@ -915,15 +1164,61 @@ function renderQ(first) {
   UI.fb = h('div', { 'aria-live': 'polite' });
   UI.submit = h('button', { class: 'btn', type: 'button', disabled: true, onclick: check }, '⚔ Serang!');
   UI.pot = h('button', { class: 'btn alt', type: 'button', onclick: usePotion }, '🧪 Ramuan');
+  UI.blt = h('button', { class: 'btn petir', type: 'button', onclick: useBolt }, '⚡ Petir Sila');
+  UI.cry = h('button', { class: 'btn kristal', type: 'button', onclick: useCrystal }, '🔮 Kristal Kuno');
   UI.scr = (q.t === 's' || q.t === 'a') ? h('button', { class: 'btn alt', type: 'button', onclick: useScroll }, '📜 50:50') : null;
-  c.append(h('div', { class: 'acts' }, h('div', { class: 'items' }, UI.pot, UI.scr), UI.submit), UI.fb);
+  c.append(h('div', { class: 'acts' }, h('div', { class: 'items' }, UI.pot, UI.scr, UI.blt, UI.cry), UI.submit), UI.fb);
   itemState();
   if (!first) { var top = $('.hud'); if (top) window.scrollTo(0, 0); }
 }
+
+function useBolt() {
+  if (S.bolts <= 0 || S.done || S.busy || S.over) return;
+  S.bolts--;
+  S.busy = true;
+  UI.submit.disabled = true; itemState();
+  // Petir Sila: stun musuh, damage 20% HP display, bonus next answer
+  var E = ctr($('#e-spr'));
+  // lightning BG flash
+  var lb = document.createElement('div'); lb.className='lightning-bg'; $('#scene').append(lb);
+  setTimeout(function(){ if(lb.parentNode) lb.parentNode.removeChild(lb); }, 600);
+  // bolts from sky
+  for(var i=0;i<5;i++){
+    (function(ii){ setTimeout(function(){
+      fly('⚡', {x:E.x+(ii-2)*18,y:0}, {x:E.x+(ii-2)*8,y:E.y}, {dur:280,size:34,o1:0,ease:'ease-in',delay:0});
+    },ii*80); })(i);
+  }
+  setTimeout(function(){
+    ring(E,{color:'#88ccff',to:2.8,dur:500});
+    burst(E,'⚡',8,50);
+    shakeUnit('#foe');
+    // reduce enemy HP bar by 20%
+    var cur2=parseFloat($('#e-hp').style.width||'100'); $('#e-hp').style.width=Math.max(0,cur2-20)+'%';
+    floatT('⚡PETIR!',E,'#88ccff',true);
+    S.bolts_bonus = true; // next correct answer ignores shield
+    S.busy = false; hud(); itemState();
+    banner('⚡ PETIR SILA · Musuh tersengat!',1200);
+  }, 480);
+}
+function useCrystal() {
+  if (S.crystals <= 0 || S.crystalActive || S.done || S.over) return;
+  S.crystals--; S.crystalActive = true;
+  var H = ctr($('#hero-spr'));
+  ring(H,{color:'#cc88ff',to:2.2,dur:700});
+  burst(H,'🔮',6,50);
+  floatT('×2 SKOR AKTIF',H,'#dd99ff',true);
+  banner('🔮 KRISTAL KUNO · Skor ronde ini ×2!',1500);
+  hud(); itemState();
+  // show buff chip on submit button
+  if(UI.submit){ var chip=document.createElement('span'); chip.className='buff-chip'; chip.textContent='×2'; UI.submit.append(chip); }
+}
+
 function itemState() {
   if (!UI.pot) return;
   UI.pot.disabled = S.potions <= 0 || S.hp >= 100 || S.over || S.busy;
   if (UI.scr) UI.scr.disabled = S.scrolls <= 0 || S.hinted || S.done || S.busy;
+  if (UI.blt) UI.blt.disabled = S.bolts <= 0 || S.done || S.busy || S.over;
+  if (UI.cry) UI.cry.disabled = S.crystals <= 0 || S.crystalActive || S.done || S.over;
 }
 function ready(q) {
   if (q.t === 'j' || q.t === 'k') return S.ans.every(function (v) { return v !== null; });
@@ -999,7 +1294,11 @@ async function check() {
     if (H.id === 'tabib') heal = 6;
     if (S.streak > S.best) S.best = S.streak;
   } else S.streak = 0;
-  var before = S.score; S.score = Math.min(MAXSCORE, S.score + base + speed + combo + (crit ? 2 : 0)); var pts = S.score - before;
+  var crystalMult = (S.crystalActive && full) ? 2 : 1;
+  if (full && S.crystalActive) { S.crystalActive = false; }
+  var rawPts = base + speed + combo + (crit ? 2 : 0);
+  var before = S.score; S.score = Math.min(MAXSCORE, S.score + rawPts * crystalMult); var pts = S.score - before;
+  if (crystalMult > 1) pts = S.score - before;
   S.base += base;
 
   var dmg = 0, shielded = false;
@@ -1012,37 +1311,125 @@ async function check() {
   if (heal) S.hp = Math.min(100, S.hp + heal);
   S.log.push({ q: q, f: f, u: u, pts: pts });
 
-  await playTurn({ f: f, full: full, crit: crit, dmg: dmg, shielded: shielded, heal: heal, boss: !!q.boss });
+  await playTurn({ f: f, full: full, crit: crit, dmg: dmg, shielded: shielded, heal: heal, boss: !!q.boss, crystalBonus: crystalMult > 1 });
   S.done = true; S.busy = false;
   if (S.hp <= 0) S.over = true;
   hud(); itemState();
   feedback(q, f, pts, { base: base, speed: speed, combo: combo, crit: crit, heal: heal, dmg: dmg, shielded: shielded });
 }
 
+function impactFlash(color, dur) {
+  var fl = $('#impact-flash'); fl.style.background = color || '#fff'; fl.style.opacity = '.85';
+  fl.animate([{opacity:.85},{opacity:0}], {duration: dur||220, easing:'ease-out'}).onfinish = function(){ fl.style.opacity='0'; };
+}
+function shockwave(p, color, size) {
+  var e = document.createElement('div');
+  e.className = 'shockwave';
+  var sz = size || 80;
+  e.style.cssText = 'width:'+sz+'px;height:'+sz+'px;left:'+(p.x-sz/2)+'px;top:'+(p.y-sz/2)+'px;border:4px solid '+(color||'#fff')+';box-shadow:0 0 20px '+(color||'#fff')+';opacity:0.9;position:absolute;z-index:5;pointer-events:none;';
+  fxl().append(e);
+  done(e.animate([{transform:'scale(.1)',opacity:1},{transform:'scale(2)',opacity:0}],{duration:460,easing:'ease-out'}),e);
+}
+function defeatAnim(heroId, foeEl, foeCenter) {
+  // Different JRPG defeat effects per hero class
+  var fx = fxl();
+  if (heroId === 'ksatria') {
+    // Slash → shatter into 8 fragments
+    impactFlash('#ffdd88', 180);
+    shockwave(foeCenter, '#ffd24a', 100);
+    for (var i = 0; i < 8; i++) {
+      var ang = (Math.PI*2*i/8) - Math.PI/2;
+      var dist = 60 + Math.random()*40;
+      fly('▪', foeCenter, {x:foeCenter.x+Math.cos(ang)*dist, y:foeCenter.y+Math.sin(ang)*dist}, {dur:500,delay:i*30,size:14,o1:0,ease:'ease-out',r1:(i%2?90:-90)});
+    }
+    burst(foeCenter,'✨',10,55);
+  } else if (heroId === 'penyihir') {
+    // Meteor impact → explosion cloud
+    impactFlash('#9966ff', 250);
+    shockwave(foeCenter, '#bb88ff', 120);
+    for(var j=0;j<12;j++){
+      fly('💥',foeCenter,{x:foeCenter.x+(Math.cos(j/12*Math.PI*2))*70,y:foeCenter.y+(Math.sin(j/12*Math.PI*2))*50},{dur:600,delay:j*40,size:22,o1:0,ease:'ease-out'});
+    }
+    beam(foeCenter,'#cc99ff');
+  } else if (heroId === 'tabib') {
+    // Holy light disintegrate
+    impactFlash('#ccffcc', 200);
+    shockwave(foeCenter,'#6cf0a5',110);
+    for(var k=0;k<10;k++) fly('✨',foeCenter,{x:foeCenter.x+(Math.random()-.5)*120,y:foeCenter.y-80-Math.random()*40},{dur:700,delay:k*60,size:20,o1:0,ease:'ease-out'});
+    fly('💚',foeCenter,{x:foeCenter.x,y:foeCenter.y-90},{dur:600,size:48,o1:0,ease:'ease-out'});
+  } else if (heroId === 'ninja') {
+    // Afterimage + X-slash fragmentize
+    impactFlash('#222244', 160);
+    slash(foeCenter,-50); slash(foeCenter,50); slash(foeCenter,0); slash(foeCenter,90);
+    for(var n2=0;n2<6;n2++) fly('🌀',foeCenter,{x:foeCenter.x+(Math.cos(n2*1.05))*80,y:foeCenter.y+(Math.sin(n2*1.05))*60},{dur:450,delay:n2*50,size:18,o1:0,ease:'ease-in'});
+  } else if (heroId === 'penyair') {
+    // Sound wave resonance dissolve
+    impactFlash('#ff9900', 200);
+    shockwave(foeCenter,'#ffb454',100);shockwave(foeCenter,'#ffb454',160);
+    for(var n3=0;n3<8;n3++) fly(n3%2?'🎵':'🎶',foeCenter,{x:foeCenter.x+(Math.random()-.5)*140,y:foeCenter.y-60-Math.random()*60},{dur:700,delay:n3*70,size:22,o1:0,ease:'ease-out',r1:(n3%2?30:-30)});
+  } else {
+    // peri: starfield burst
+    impactFlash('#cceeff', 200);
+    shockwave(foeCenter,'#7fd8ff',120);
+    for(var n4=0;n4<12;n4++) fly('⭐',foeCenter,{x:foeCenter.x+(Math.cos(n4/12*Math.PI*2))*90,y:foeCenter.y+(Math.sin(n4/12*Math.PI*2))*70},{dur:650,delay:n4*45,size:20,o1:0,r1:360,ease:'ease-out'});
+    ring(foeCenter,{color:'#fff',size:140,to:1.2,dur:600});
+  }
+}
+
+/* pose serang untuk tiap skill */
+Object.keys(HFX).forEach(function (k) {
+  var f = HFX[k];
+  HFX[k] = async function (c) { HP.pose = 'atk'; paintHero(); try { await f(c); } finally { HP.pose = 'idle'; paintHero(); } };
+});
+
 async function playTurn(r) {
   var H = S.hero, es = $('#e-spr'), hs = $('#hero-spr');
   if (r.f > 0) {
     banner('✦ ' + H.skill + (r.crit ? ' · KRITIKAL!' : '') + ' ✦', 1100);
+    // Pre-attack charge glow
+    if (!reduced) { hs.classList.add('charging'); setTimeout(function(){ hs.classList.remove('charging'); }, 600); }
     if (reduced) await wait(250); else await HFX[H.id](r.crit);
-    var E = ctr(es), n = Math.round(r.f * (180 + Math.random() * 60)) * (r.crit ? 2 : 1);
-    floatT('-' + n, E, r.crit ? '#ff9b2f' : '#fff', r.crit);
+    var E = ctr(es);
+    var n = Math.round(r.f * (180 + Math.random() * 60)) * (r.crit ? 2 : 1);
+    // Crystal: show ×2 float
+    if (r.crystalBonus) floatT('×2 KRISTAL!', E, '#cc88ff', true);
+    var numColor = r.crit ? '#ff9b2f' : '#fff';
+    floatT('-' + n, E, numColor, r.crit);
+    // HP bar update + flash
+    var oldW = parseFloat($('#e-hp').style.width||'100');
+    var newW = Math.max(0, Math.round(oldW - r.f * 100));
+    $('#e-hp').style.width = newW + '%';
+    $('#e-hp').classList.remove('ehp-hit'); void $('#e-hp').offsetWidth; $('#e-hp').classList.add('ehp-hit');
     shakeUnit('#foe');
-    $('#e-hp').style.width = Math.round((1 - r.f) * 100) + '%';
     if (r.heal) floatT('+' + r.heal + ' HP', ctr(hs), '#3ce27a');
     if (r.full) {
       await wait(280);
-      if (!reduced) es.animate([{ opacity: 1, transform: 'scale(1) rotate(0)' }, { opacity: 0, transform: 'scale(.3) rotate(30deg)' }], { duration: 520, fill: 'forwards' });
-      burst(ctr(es), '💫', 6, 40);
+      // JRPG defeat animation
+      if (!reduced) defeatAnim(H.id, es, E);
+      await wait(100);
+      // Monster dissolve
+      if (!reduced) {
+        es.animate([
+          { opacity:1, transform:'scale(1)' },
+          { opacity:.6, transform:'scale(1.2) rotate(-8deg)', offset:.3 },
+          { opacity:0, transform:'scale(0) rotate(30deg)' }
+        ], { duration: 620, fill:'forwards', easing:'ease-in' });
+      }
     }
-    await wait(r.full ? 650 : 450);
+    await wait(r.full ? 720 : 450);
   }
   if (r.f < 1) {
     var Hc = ctr(hs), Ec = ctr(es);
     if (!reduced) lunge('#foe', -(Ec.x - Hc.x - 70));
     await wait(reduced ? 150 : 330);
     if (r.shielded) { ring(Hc, { color: '#7fd8ff', size: 90, to: 1.4, dur: 700 }); floatT('TAMENG!', Hc, '#7fd8ff', true); }
-    else { shakeUnit('#hero', 'drop-shadow(0 0 8px #ff3040) brightness(1.7)'); floatT('-' + r.dmg, Hc, '#ff5468', true);
-      var s = $('#scene'); if (!reduced) s.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(4px,-2px)' }, { transform: 'translate(0,0)' }], { duration: 260 }); }
+    else {
+      impactFlash('#ff3040', 180);
+      shakeUnit('#hero', 'drop-shadow(0 0 8px #ff3040) brightness(1.7)');
+      floatT('-' + r.dmg, Hc, '#ff5468', true);
+      var sc = $('#scene');
+      if (!reduced) sc.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-5px,3px)' }, { transform: 'translate(5px,-3px)' }, { transform: 'translate(-3px,2px)' }, { transform: 'translate(0,0)' }], { duration: 320 });
+    }
     await wait(reduced ? 150 : 600);
   }
 }
@@ -1089,14 +1476,14 @@ function nextQ() {
   S.i++; renderQ();
 }
 function interlude(ai) {
-  S.lv++; S.potions++;
+  S.lv++; S.potions++; if (S.bolts < 3) S.bolts++;
   var A = AREAS[ai], N = AREAS[ai + 1];
   var c = $('#qcard'); c.replaceChildren();
   var go = h('button', { class: 'btn big', type: 'button', onclick: function () { S.i++; renderQ(); } }, '▶ Menuju ' + N.name);
   c.append(h('div', { class: 'stack inter' },
     h('p', { class: 'big' }, 'AREA BERSIH!'),
     h('p', {}, A.name + ' sudah aman. Pahlawanmu naik ke ', h('b', { style: 'color:var(--gold);font-weight:400' }, 'Lv ' + S.lv), '.'),
-    h('div', { class: 'loot' }, h('span', {}, '🧪 Ramuan +1'), h('span', {}, 'HP ' + S.hp + '/100')),
+    h('div', { class: 'loot' }, h('span', {}, '🧪 Ramuan +1'), h('span', {}, '⚡ Petir +1'), h('span', {}, 'HP ' + S.hp + '/100')),
     h('p', { class: 'mut' }, 'Berikutnya: ' + N.name + ' (' + N.el + ').'), go));
   hud(); $('#foe').style.visibility = 'hidden';
   banner('AREA BERSIH · Lv ' + S.lv, 1400);
@@ -1128,7 +1515,7 @@ function finish() {
   var box = function (l, v) { return h('div', { class: 'box' }, h('small', {}, l), h('b', {}, v)); };
   var scoreEl = h('div', { class: 'score' }, '0');
   r.append(h('div', { class: 'win stack' },
-    h('div', { class: 'res-top' }, h('span', { class: 'port' }, S.hero.ico),
+    h('div', { class: 'res-top' }, h('span', { class: 'port' }, portrait(S.hero.id)),
       h('div', {}, h('p', { class: 'eyebrow' }, S.over ? 'GAME OVER' : 'PETUALANGAN SELESAI'), h('h2', {}, rank(S.nilai, S.over)), h('p', {}, S.name + ' · ' + S.hero.name))),
     h('div', {}, h('p', { class: 'eyebrow' }, 'SKOR TOTAL'), scoreEl),
     h('div', { class: 'g4' }, box('NILAI 0–100', S.nilai), box('WAKTU', fmt(total)), box('BENAR PENUH', S.full + '/' + n), box('COMBO TERBAIK', S.best), box('HP AKHIR', S.hp + '/100'), box('LEVEL', S.lv)),
