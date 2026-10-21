@@ -356,6 +356,25 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
 .port .pxh{width:100%;height:auto}
 .res-top .port{width:96px;height:96px}
 .logo .eyebrow{color:var(--gold)}
+
+/* ===== tanpa tombol lanjut + arena tetap terlihat di ponsel ===== */
+.auto{height:8px;background:rgba(4,6,26,.6);border:2px solid var(--edge);margin-top:4px;overflow:hidden}
+.auto i{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left;animation:drain var(--ms,4000ms) linear forwards}
+@keyframes drain{to{transform:scaleX(0)}}
+.skiphint{font-family:var(--px);font-size:.48rem;line-height:1.6;color:var(--mut);margin:0}
+.fb,.inter{cursor:pointer}
+.stage{display:contents}
+@media(max-width:700px){
+  .stage{display:block;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--night);margin:0 -14px;padding:6px 14px 4px}
+  .stage .hud{position:static;margin-top:0}
+  .stage .scene{margin:8px 0 2px;height:clamp(136px,38vw,168px)}
+  .unit.hero .pxh{width:clamp(70px,20vw,92px)}
+  .pxm{width:clamp(64px,18vw,86px)}
+  .foe.boss .pxm{width:clamp(90px,26vw,120px)}
+  .ename{font-size:.68rem;padding:1px 6px}
+  .banner{font-size:.5rem;top:6px}
+  .fb{scroll-margin-top:300px}
+}
 </style>
 </head>
 <body>
@@ -375,7 +394,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
       <div class="heroes" id="heroes" role="radiogroup" aria-label="Pilih pahlawan"></div>
       <div class="win in hd" id="hdetail"></div>
       <label class="fld" for="nm">Nama petualang
-        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Rapsanjani" autocomplete="off">
+        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Gugun Gendang" autocomplete="off">
       </label>
       <div class="row"><button class="btn big" id="go" type="button">▶ Mulai petualangan</button></div>
     </div>
@@ -400,6 +419,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
 
   <!-- PERTARUNGAN -->
   <section id="s-quiz" hidden>
+    <div class="stage">
     <div class="hud win">
       <div class="hud-l"><span class="port" id="h-port"></span><div class="hud-n"><b id="h-name"></b><small id="h-class"></small></div></div>
       <div class="hud-m">
@@ -423,6 +443,8 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
       <div id="fx"></div>
       <div class="impact-flash" id="impact-flash"></div>
       <div class="skill-tint" id="skill-tint"></div>
+    </div>
+
     </div>
 
     <div class="win qwin" id="qcard"></div>
@@ -1055,7 +1077,8 @@ var HFX = {
 };
 
 /* ====== state ====== */
-var S = null, UI = {}, timer = null;
+var S = null, UI = {}, timer = null, ADV = null;
+function advance() { clearTimeout(ADV); nextQ(); }
 function cur() { return Q[S.order[S.i]]; }
 function build() {
   var order = [], inArea = [];
@@ -1068,6 +1091,7 @@ function build() {
   return { order: order, inArea: inArea };
 }
 function startGame() {
+  clearTimeout(ADV);
   var name = ($('#nm').value || '').trim() || 'Petualang';
   try { localStorage.setItem(KEY, JSON.stringify({ n: ($('#nm').value || '').trim(), h: heroId })); } catch (e) {}
   var H = heroOf(heroId), b = build();
@@ -1104,6 +1128,7 @@ function setScene(q) {
 
 /* ====== render soal ====== */
 function renderQ(first) {
+  window.scrollTo(0, 0);
   var q = cur(), c = $('#qcard'); c.replaceChildren();
   S.done = false; S.busy = false; S.sel = null; S.sels = []; S.txt = ''; S.hinted = false; S.qt = Date.now();
   S.perm = (q.t === 's' || q.t === 'm') ? shuffle(range(q.o.length)) : null;
@@ -1454,20 +1479,21 @@ function feedback(q, f, pts, d) {
   if (d.heal) info.push('pulih ' + d.heal + ' HP');
   if (d.shielded) info.push('tameng menahan serangan musuh');
   else if (d.dmg) info.push('HP −' + d.dmg);
-  var last = S.i === S.order.length - 1;
-  var next = h('button', { class: 'btn', type: 'button', onclick: nextQ }, S.over ? 'Lihat hasil' : last ? 'Lihat hasil' : '▶ Lanjut');
-  UI.fb.replaceChildren(h('div', { class: 'fb ' + cls },
+  var ms = Math.min(9000, Math.max(3200, 2200 + String(q.x || '').length * 20 + (f < 1 ? 1500 : 0)));
+  UI.fb.replaceChildren(h('div', { class: 'fb ' + cls, onclick: advance },
     h('h3', {}, head),
     info.length ? h('p', { class: 'mut' }, info.join(' · ')) : null,
     f < 1 ? h('div', {}, h('span', { class: 'tag' }, 'JAWABAN YANG BENAR'), corr(q)) : null,
-    h('div', { class: 'exp' }, h('b', {}, 'CATATAN PEMBAHASAN'), q.x)),
-    h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, next));
-  next.focus({ preventScroll: true });
+    h('div', { class: 'exp' }, h('b', {}, 'CATATAN PEMBAHASAN'), q.x),
+    h('div', { class: 'auto', style: '--ms:' + ms + 'ms' }, h('i')),
+    h('p', { class: 'skiphint' }, 'LANJUT OTOMATIS · KETUK UNTUK MELEWATI')));
+  clearTimeout(ADV); ADV = setTimeout(advance, ms);
   UI.fb.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
   if (f < 1 && !reduced) { var c = $('#qcard'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
 }
 
 function nextQ() {
+  clearTimeout(ADV);
   if (!S.done) return;
   if (S.over) return gameOver();
   if (S.i >= S.order.length - 1) return finish();
@@ -1479,26 +1505,29 @@ function interlude(ai) {
   S.lv++; S.potions++; if (S.bolts < 3) S.bolts++;
   var A = AREAS[ai], N = AREAS[ai + 1];
   var c = $('#qcard'); c.replaceChildren();
-  var go = h('button', { class: 'btn big', type: 'button', onclick: function () { S.i++; renderQ(); } }, '▶ Menuju ' + N.name);
+  var go = function () { clearTimeout(ADV); S.i++; renderQ(); };
+  S.done = false; S.busy = true;
   c.append(h('div', { class: 'stack inter' },
     h('p', { class: 'big' }, 'AREA BERSIH!'),
     h('p', {}, A.name + ' sudah aman. Pahlawanmu naik ke ', h('b', { style: 'color:var(--gold);font-weight:400' }, 'Lv ' + S.lv), '.'),
     h('div', { class: 'loot' }, h('span', {}, '🧪 Ramuan +1'), h('span', {}, '⚡ Petir +1'), h('span', {}, 'HP ' + S.hp + '/100')),
-    h('p', { class: 'mut' }, 'Berikutnya: ' + N.name + ' (' + N.el + ').'), go));
+    h('p', { class: 'mut' }, 'Berikutnya: ' + N.name + ' (' + N.el + ').'),
+    h('div', { class: 'auto', style: '--ms:3800ms' }, h('i')), h('p', { class: 'skiphint' }, 'MENUJU AREA BERIKUTNYA · KETUK UNTUK MELEWATI')));
+  c.firstChild.onclick = go; clearTimeout(ADV); ADV = setTimeout(go, 3800);
   hud(); $('#foe').style.visibility = 'hidden';
   banner('AREA BERSIH · Lv ' + S.lv, 1400);
-  go.focus({ preventScroll: true });
 }
 function gameOver() {
   var c = $('#qcard'); c.replaceChildren();
-  var go = h('button', { class: 'btn big', type: 'button', onclick: finish }, '▶ Lihat hasil');
-  c.append(h('div', { class: 'stack inter lose' },
+  S.done = false; S.busy = true;
+  c.append(h('div', { class: 'stack inter lose', onclick: finish },
     h('p', { class: 'big' }, 'KAMU GUGUR'),
     h('p', {}, S.hero.name + ' tumbang di ' + AREAS[cur().a].name + ' setelah ' + S.log.length + ' dari ' + S.order.length + ' soal.'),
-    h('p', { class: 'mut' }, 'Baca catatan pembahasan di halaman hasil, lalu coba lagi dengan strategi baru.'), go));
+    h('p', { class: 'mut' }, 'Baca catatan pembahasan di halaman hasil, lalu coba lagi dengan strategi baru.'),
+    h('div', { class: 'auto', style: '--ms:3500ms' }, h('i')), h('p', { class: 'skiphint' }, 'MENUJU HASIL · KETUK UNTUK MELEWATI')));
+  clearTimeout(ADV); ADV = setTimeout(finish, 3500);
   banner('GAME OVER', 1400);
   if (!reduced) $('#hero-spr').animate([{ transform: 'rotate(0)', opacity: 1 }, { transform: 'rotate(80deg) translateY(18px)', opacity: .5 }], { duration: 700, fill: 'forwards' });
-  go.focus({ preventScroll: true });
 }
 
 /* ====== hasil ====== */
@@ -1507,7 +1536,7 @@ function rank(n, over) {
   return n >= 90 ? 'Legenda Garuda' : n >= 75 ? 'Pahlawan Nusantara' : n >= 60 ? 'Ksatria Pancasila' : 'Petualang Pemula';
 }
 function finish() {
-  clearInterval(timer);
+  clearTimeout(ADV); clearInterval(timer);
   $('#foe').style.visibility = '';
   var n = S.order.length, total = Date.now() - S.t0;
   S.nilai = Math.round(S.base / (n * 10) * 100);
