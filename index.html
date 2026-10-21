@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PPKn Quest · Legenda Nusantara</title>
+<!--
+SQL Supabase (sama dengan versi sebelumnya, tabel yang sudah ada tetap bisa dipakai).
+Skor maksimal di game ini dibatasi 300 agar sesuai constraint tabel.
+
+create table public.skor_kuis (
+  id bigint generated always as identity primary key,
+  nama text not null check (char_length(nama) between 1 and 18),
+  avatar text not null check (char_length(avatar) <= 8),
+  skor int not null check (skor between 0 and 300),
+  nilai int not null check (nilai between 0 and 100),
+  benar int not null check (benar between 0 and 50),
+  total int not null check (total between 1 and 50),
+  created_at timestamptz not null default now()
+);
+alter table public.skor_kuis enable row level security;
+create policy "baca skor" on public.skor_kuis for select to anon using (true);
+create policy "kirim skor" on public.skor_kuis for insert to anon with check (true);
+
+-- WAJIB untuk papan skor LIVE (Realtime): jalankan sekali di SQL Editor
+alter publication supabase_realtime add table public.skor_kuis;
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+/* Layout: layar JRPG. HUD pahlawan menempel di atas, panggung pertarungan di bawahnya,
+   lalu jendela soal biru bergaya menu perintah. Satu tampilan gelap yang konsisten. */
+:root{
+  --night:#070a24; --wa:#3248d6; --wb:#0e1768; --edge:#eef1ff; --bevel:#8a9bff; --ink:#04061a;
+  --gold:#ffd24a; --gold2:#ff9b2f; --tx:#f4f6ff; --mut:#b6bfff;
+  --hp:#3ce27a; --warn:#ffd24a; --bad:#ff5468; --mp:#49b7ff;
+  --jp:'DotGothic16','Courier New',monospace; --px:'Press Start 2P','Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--night)}
+body{
+  margin:0;color:var(--tx);font:17px/1.55 var(--jp);
+  background-color:var(--night);
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px,rgba(255,255,255,.7),transparent),
+    radial-gradient(1px 1px at 90px 120px,rgba(255,255,255,.55),transparent),
+    radial-gradient(1.5px 1.5px at 150px 60px,rgba(255,210,74,.7),transparent),
+    linear-gradient(180deg,#070a24,#141a58 65%,#2a1b5e);
+  background-size:180px 160px,130px 150px,220px 200px,100% 100%;
+  background-repeat:repeat,repeat,repeat,no-repeat;
+  background-attachment:fixed;
+  padding:0 max(14px,env(safe-area-inset-right,0px)) 60px max(14px,env(safe-area-inset-left,0px));
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--night)}
+.wrap{max-width:780px;margin:0 auto}
+h1,h2,h3,p{margin:0}
+h2{font-family:var(--px);font-size:.8rem;line-height:1.6;color:var(--gold);letter-spacing:.04em;text-shadow:2px 2px 0 rgba(0,0,0,.6)}
+button,select,input{font-family:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mut{color:var(--mut)}
+.px{font-family:var(--px)}
+
+/* jendela biru */
+.win{position:relative;min-width:0;background:linear-gradient(180deg,var(--wa),var(--wb));border:3px solid var(--edge);border-radius:10px;
+  box-shadow:0 0 0 3px var(--ink),inset 0 0 0 2px var(--bevel),5px 6px 0 rgba(0,0,0,.45);padding:16px 18px;text-shadow:1px 1px 0 rgba(0,0,0,.55)}
+.win.in{background:rgba(4,6,26,.45);box-shadow:inset 0 0 0 2px rgba(138,155,255,.5);border-width:2px;padding:12px 14px}
+
+/* tombol */
+.btn{font:400 1rem var(--jp);color:#3a1d00;background:linear-gradient(#ffe27a,var(--gold2));border:3px solid #fff7d6;border-radius:8px;padding:10px 18px;cursor:pointer;
+  box-shadow:0 0 0 3px var(--ink),3px 4px 0 3px rgba(0,0,0,.45);text-shadow:none;transition:transform .08s}
+.btn:hover:not([disabled]){transform:translate(-1px,-1px)}
+.btn:active:not([disabled]){transform:translate(2px,2px)}
+.btn.alt{color:var(--tx);background:linear-gradient(var(--wa),var(--wb));border-color:var(--edge);text-shadow:1px 1px 0 rgba(0,0,0,.6)}
+.btn.big{padding:14px 24px;font-size:1.15rem}
+.btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:0 0 0 3px var(--ink)}
+
+/* judul */
+.logo{padding-top:28px;display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:var(--px);font-size:.6rem;color:var(--mut);letter-spacing:.08em;line-height:1.8}
+.logo h1{font-family:var(--px);font-size:clamp(2rem,10vw,3.6rem);line-height:1.15;color:var(--gold);letter-spacing:.02em;
+  text-shadow:3px 3px 0 #b85a00,6px 6px 0 var(--ink),0 0 24px rgba(255,210,74,.35)}
+.logo h1 span{color:#fff;text-shadow:3px 3px 0 #2346a8,6px 6px 0 var(--ink)}
+.logo .sub{font-size:1.25rem;color:#fff}
+.logo .lead{max-width:60ch;color:var(--mut)}
+
+/* pilih pahlawan */
+.heroes{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px}
+.hc{position:relative;cursor:pointer;display:block}
+.hc input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.hc .card{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px 8px;border:2px solid var(--bevel);border-radius:8px;background:rgba(4,6,26,.45);font-size:.82rem;text-align:center;line-height:1.25;transition:transform .1s}
+.hc .card .e{font-size:2.3rem;line-height:1.2}
+.hc input:checked+.card{border-color:var(--gold);background:rgba(255,210,74,.14);box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,210,74,.35);transform:translateY(-2px)}
+.hc input:focus-visible+.card{outline:3px solid #fff;outline-offset:3px}
+.hc input:checked+.card::before{content:"▶";position:absolute;left:6px;top:6px;color:var(--gold);font-size:.7rem;animation:blink 1s steps(2) infinite}
+.hd{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.hd .big{font-size:3.4rem;line-height:1}
+.hd b{color:var(--gold)}
+.hd p{font-size:.95rem}
+label.fld{display:flex;flex-direction:column;gap:6px;font-size:.95rem}
+input[type=text]{font:1.05rem var(--jp);color:#fff;background:rgba(4,6,26,.7);border:2px solid var(--edge);border-radius:6px;padding:10px 12px;width:100%;text-shadow:none}
+input[type=text]::placeholder{color:#8d98e8}
+input[type=text].ok{border-color:var(--hp);background:rgba(60,226,122,.18)}
+input[type=text].no{border-color:var(--bad);background:rgba(255,84,104,.2)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:.95rem}
+.rules>div{padding:10px 12px;border:2px solid rgba(138,155,255,.55);border-radius:8px;background:rgba(4,6,26,.35)}
+.rules b{display:block;color:var(--gold);font-weight:400;margin-bottom:2px}
+
+/* papan skor */
+.lbw{max-height:420px;overflow-y:auto;padding:2px 6px 6px 2px}
+.lb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.lb li{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border:2px solid rgba(138,155,255,.55);border-radius:8px;background:rgba(4,6,26,.45)}
+.lb li.me{border-color:var(--gold);background:rgba(255,210,74,.15)}
+.lb .rk{font-family:var(--px);font-size:.7rem;color:var(--gold)}
+.lb .nm{overflow-wrap:anywhere}
+.lb .sc{font-family:var(--px);font-size:.7rem;text-align:right;line-height:1.5}
+.lb .sc small{display:block;font-family:var(--jp);font-size:.78rem;color:var(--mut)}
+.lb li:nth-child(-n+3) .rk{color:#fff;text-shadow:0 0 8px var(--gold)}
+
+/* HUD */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;margin-top:12px;display:grid;grid-template-columns:auto minmax(120px,1fr) auto;gap:12px;align-items:center;padding:10px 14px}
+.port{width:52px;height:52px;display:grid;place-items:center;font-size:2rem;background:rgba(4,6,26,.6);border:2px solid var(--edge);border-radius:8px}
+.hud-l{display:flex;gap:10px;align-items:center;min-width:0}
+.hud-n{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.hud-n b{font-weight:400;overflow-wrap:anywhere}
+.hud-n small{color:var(--mut);font-size:.78rem}
+.lbl{display:flex;justify-content:space-between;font-family:var(--px);font-size:.55rem;letter-spacing:.04em;color:#fff;margin-bottom:4px;gap:8px}
+.bar{height:14px;border:2px solid var(--edge);background:var(--ink);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(#7bffb0,var(--hp));transition:width .6s ease,background .3s}
+.bar i.mid{background:linear-gradient(#ffe98a,var(--warn))}
+.bar i.low{background:linear-gradient(#ff9aa6,var(--bad))}
+.hud-m .meta{display:flex;gap:12px;margin-top:5px;font-size:.8rem;color:var(--mut);flex-wrap:wrap}
+.hud-r{display:flex;gap:8px}
+.st{display:flex;flex-direction:column;align-items:flex-end;line-height:1.3}
+.st small{font-family:var(--px);font-size:.5rem;color:var(--mut)}
+.st b{font-family:var(--px);font-weight:400;font-size:.85rem;color:var(--gold);font-variant-numeric:tabular-nums}
+@media(max-width:560px){
+  .hud{grid-template-columns:1fr auto;grid-template-areas:"l r" "m m";gap:8px 10px;padding:8px 12px;margin-top:8px}
+  .hud-l{grid-area:l}.hud-r{grid-area:r;gap:14px}.hud-m{grid-area:m}
+  .hud-m .meta{margin-top:3px;gap:10px}
+  .port{width:40px;height:40px;font-size:1.5rem}
+  .hud-n small{font-size:.72rem}
+  .scene{height:clamp(190px,52vw,240px)}
+}
+
+/* panggung */
+.scene{position:relative;height:clamp(210px,40vw,280px);margin:12px 0;border:3px solid var(--edge);border-radius:10px;overflow:hidden;
+  box-shadow:0 0 0 3px var(--ink),5px 6px 0 rgba(0,0,0,.45);background:linear-gradient(var(--sky1),var(--sky2));--sky1:#2b8c9d;--sky2:#a8e6bf;--gr1:#2e7d3a;--gr2:#18452a}
+.scene.a0{--sky1:#2b8c9d;--sky2:#a8e6bf;--gr1:#2e7d3a;--gr2:#18452a}
+.scene.a1{--sky1:#2a1f5e;--sky2:#7a58b0;--gr1:#554e7a;--gr2:#2a2540}
+.scene.a2{--sky1:#ff8a55;--sky2:#ffd98a;--gr1:#6a3f86;--gr2:#35204f}
+.scene.a3{--sky1:#12062e;--sky2:#5a1030;--gr1:#58161f;--gr2:#1d0710}
+.scene.a3::before{content:"";position:absolute;inset:0;background:radial-gradient(1.5px 1.5px at 30px 20px,#fff,transparent),radial-gradient(1px 1px at 110px 60px,#fff,transparent),radial-gradient(1.5px 1.5px at 200px 30px,#ffd24a,transparent);background-size:240px 120px}
+.gr{position:absolute;left:0;right:0;bottom:0;height:40%;background:repeating-linear-gradient(90deg,rgba(0,0,0,.1) 0 2px,transparent 2px 30px),linear-gradient(var(--gr1),var(--gr2));border-top:3px solid rgba(0,0,0,.35)}
+.decor{position:absolute;left:0;right:0;bottom:39%;display:flex;justify-content:space-around;font-size:clamp(28px,7vw,46px);opacity:.6;line-height:1;pointer-events:none}
+.unit{position:absolute;bottom:13%;display:flex;flex-direction:column;align-items:center;gap:2px;width:min(36%,190px)}
+.unit.hero{left:7%}.unit.foe{right:7%}
+.spr{font-size:clamp(52px,13vw,86px);line-height:1;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35));animation:bob 1.8s ease-in-out infinite}
+.foe .spr{animation-delay:-.7s}
+.foe.boss .spr{font-size:clamp(76px,19vw,124px)}
+.unit .sh{width:70%;height:10px;border-radius:50%;background:rgba(0,0,0,.35);margin-top:-6px}
+.ename{font-size:.82rem;text-align:center;line-height:1.2;background:rgba(4,6,26,.7);border:2px solid var(--edge);border-radius:6px;padding:2px 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.ehp{width:100%;height:9px;border:2px solid var(--edge);background:var(--ink);border-radius:3px;overflow:hidden}
+.ehp i{display:block;height:100%;width:100%;background:linear-gradient(#ff9aa6,var(--bad));transition:width .5s ease}
+.banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;opacity:0;pointer-events:none;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis;
+  font-family:var(--px);font-size:.62rem;line-height:1.6;color:var(--gold);background:linear-gradient(var(--wa),var(--wb));border:3px solid var(--edge);border-radius:8px;padding:6px 14px;box-shadow:0 0 0 3px var(--ink)}
+#fx{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+.fx{position:absolute;left:0;top:0;line-height:1;pointer-events:none;will-change:transform}
+.fxd{position:absolute;pointer-events:none}
+.slash{width:130px;height:9px;border-radius:9px;background:linear-gradient(90deg,transparent,#fff,var(--gold),transparent);box-shadow:0 0 12px var(--gold)}
+.num{font-family:var(--px);font-size:.85rem;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;white-space:nowrap}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes blink{50%{opacity:0}}
+
+/* jendela soal */
+.qwin{display:flex;flex-direction:column;gap:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{font-family:var(--px);font-size:.52rem;line-height:1.8;padding:3px 9px;border:2px solid var(--bevel);border-radius:5px;background:rgba(4,6,26,.5);color:#fff}
+.chip.k{background:var(--gold);color:#3a1d00;border-color:#fff7d6;text-shadow:none}
+.pas{padding:12px 14px;border:2px solid rgba(138,155,255,.5);border-radius:8px;background:rgba(4,6,26,.4);display:flex;flex-direction:column;gap:8px;max-width:70ch}
+.pas b{color:var(--gold);font-weight:400}
+.qtext{font-size:1.1rem;max-width:68ch}
+.hint{font-family:var(--px);font-size:.55rem;color:var(--mut);line-height:1.7}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:16px 28px 1fr;gap:8px;align-items:start;width:100%;text-align:left;color:var(--tx);background:rgba(4,6,26,.4);border:2px solid rgba(138,155,255,.55);border-radius:8px;padding:10px 12px;font:1rem/1.5 var(--jp);cursor:pointer;text-shadow:1px 1px 0 rgba(0,0,0,.55)}
+.opt .cur{color:var(--gold);opacity:0;font-size:.8rem;padding-top:3px}
+.opt .key{width:26px;height:26px;display:grid;place-items:center;font-family:var(--px);font-size:.6rem;border:2px solid var(--bevel);border-radius:5px;background:var(--ink)}
+.opt .tx{overflow-wrap:anywhere}
+.opt:hover:not([disabled]){border-color:var(--gold);background:rgba(255,210,74,.1)}
+.opt:hover:not([disabled]) .cur,.opt[aria-checked=true] .cur{opacity:1;animation:blink 1s steps(2) infinite}
+.opt[aria-checked=true]{border-color:var(--gold);background:rgba(255,210,74,.16)}
+.opt[aria-checked=true] .key{background:var(--gold);color:#3a1d00;border-color:#fff7d6;text-shadow:none}
+.opt.correct{border-color:var(--hp);background:rgba(60,226,122,.2)}
+.opt.correct .key{background:var(--hp);color:#04230f;border-color:#d6ffe6;text-shadow:none}
+.opt.wrong{border-color:var(--bad);background:rgba(255,84,104,.22)}
+.opt.wrong .key{background:var(--bad);color:#fff;border-color:#ffd6db}
+.opt.gone{opacity:.3;text-decoration:line-through;pointer-events:none}
+.opt[disabled]{cursor:default}
+.tf{display:flex;flex-direction:column}
+.tf-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;align-items:center;padding:11px 0;border-top:2px dashed rgba(138,155,255,.5)}
+.tf-row:first-child{border-top:0}
+.tf-row .s{overflow-wrap:anywhere}
+.tf-row.ok{background:linear-gradient(90deg,rgba(60,226,122,.25),transparent 90%)}
+.tf-row.no{background:linear-gradient(90deg,rgba(255,84,104,.25),transparent 90%)}
+.cmds{display:flex;gap:8px;flex-wrap:wrap}
+.cmd{flex:1;min-width:92px;font:.92rem var(--jp);color:var(--tx);padding:8px 10px;background:rgba(4,6,26,.5);border:2px solid var(--bevel);border-radius:6px;cursor:pointer;text-shadow:none}
+.cmd:hover:not([disabled]){border-color:var(--gold)}
+.cmd[aria-pressed=true]{background:var(--gold);color:#3a1d00;border-color:#fff7d6}
+.cmd.correct{background:var(--hp);color:#04230f;border-color:#d6ffe6}
+.cmd.wrong{background:var(--bad);color:#fff;border-color:#ffd6db}
+.cmd[disabled]{cursor:default}
+select{font:1rem var(--jp);color:#fff;background:var(--ink);border:2px solid var(--edge);border-radius:6px;padding:9px 10px;width:100%;min-width:0;text-shadow:none}
+select option{background:#0b1250;color:#fff}
+.note{font-size:.85rem;color:var(--gold);overflow-wrap:anywhere;margin-top:4px}
+@media(max-width:560px){.tf-row{grid-template-columns:1fr;gap:8px}}
+.acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.acts .items{display:flex;gap:8px;flex-wrap:wrap}
+.acts .btn.alt{padding:8px 12px;font-size:.92rem}
+
+/* umpan balik */
+.fb{border:3px solid var(--edge);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;animation:pop .25s ease-out;background:rgba(4,6,26,.55)}
+.fb.ok{border-color:var(--hp)}.fb.no{border-color:var(--bad)}.fb.mid{border-color:var(--warn)}
+.fb h3{font-family:var(--px);font-size:.78rem;line-height:1.7}
+.fb.ok h3{color:var(--hp)}.fb.no h3{color:var(--bad)}.fb.mid h3{color:var(--warn)}
+.fb .tag{font-family:var(--px);font-size:.55rem;color:var(--gold)}
+.fb ul,.fb ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:3px}
+.fb .exp{padding:10px 12px;border:2px solid rgba(138,155,255,.55);border-radius:6px;background:rgba(50,72,214,.3)}
+.fb .exp b{display:block;font-family:var(--px);font-size:.55rem;font-weight:400;color:var(--gold);margin-bottom:4px}
+.fb p,.fb li{overflow-wrap:anywhere}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.shake{animation:shk .3s}
+@keyframes shk{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* selingan dan hasil */
+.inter{text-align:center;align-items:center;gap:14px}
+.inter .big{font-family:var(--px);font-size:clamp(1rem,5vw,1.5rem);line-height:1.5;color:var(--gold);text-shadow:3px 3px 0 #b85a00,5px 5px 0 var(--ink)}
+.inter.lose .big{color:var(--bad);text-shadow:3px 3px 0 #6a0e1b,5px 5px 0 var(--ink)}
+.loot{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.loot span{border:2px solid var(--gold);border-radius:8px;padding:6px 12px;background:rgba(255,210,74,.12)}
+.res-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.res-top .port{width:84px;height:84px;font-size:3.2rem}
+.res-top>div{min-width:0}
+.res-top h2{font-size:clamp(.8rem,3.4vw,1.1rem);line-height:1.7}
+.score{font-family:var(--px);font-size:clamp(2rem,11vw,3.6rem);color:var(--gold);line-height:1.2;text-shadow:3px 3px 0 #b85a00,5px 5px 0 var(--ink);font-variant-numeric:tabular-nums}
+.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.g4 .box{border:2px solid rgba(138,155,255,.55);border-radius:8px;background:rgba(4,6,26,.45);padding:8px 12px;display:flex;flex-direction:column;gap:2px}
+.g4 .box small{font-family:var(--px);font-size:.5rem;color:var(--mut);line-height:1.6}
+.g4 .box b{font-family:var(--px);font-weight:400;font-size:1rem;color:#fff}
+.bk{display:flex;flex-direction:column;gap:10px}
+.bk-row{display:grid;grid-template-columns:minmax(110px,190px) 1fr auto;gap:10px;align-items:center;font-size:.95rem}
+.bk-row .t{height:16px;border:2px solid var(--edge);border-radius:4px;background:var(--ink);overflow:hidden}
+.bk-row .t i{display:block;height:100%;background:linear-gradient(#7bffb0,var(--hp))}
+@media(max-width:520px){.bk-row{grid-template-columns:1fr auto}.bk-row .t{grid-column:1/-1;order:3}}
+details.rv{border:2px solid rgba(138,155,255,.6);border-radius:8px;background:rgba(4,6,26,.45)}
+details.rv summary{cursor:pointer;padding:10px 12px;display:flex;gap:10px;align-items:center;list-style:none}
+details.rv summary::-webkit-details-marker{display:none}
+details.rv summary .sn{font-family:var(--px);font-size:.6rem;color:var(--gold);flex:none}
+details.rv summary .sx{flex:1;min-width:0;overflow-wrap:anywhere}
+details.rv summary .bd{flex:none;font-family:var(--px);font-size:.5rem;padding:3px 7px;border-radius:5px;border:2px solid currentColor}
+.bd.ok{color:var(--hp)}.bd.mid{color:var(--warn)}.bd.no{color:var(--bad)}
+details.rv .rb{padding:6px 12px 12px;display:flex;flex-direction:column;gap:8px;border-top:2px dashed rgba(138,155,255,.5)}
+details.rv .rb p,details.rv .rb li{overflow-wrap:anywhere}
+details.rv .rb ul,details.rv .rb ol{margin:0;padding-left:1.3em}
+.rv-list{display:flex;flex-direction:column;gap:8px}
+
+
+.live{font-family:var(--px);font-size:.5rem;line-height:1.6;padding:3px 8px;border:2px solid currentColor;border-radius:5px;color:var(--mut);white-space:nowrap}
+.live.on{color:var(--hp)}
+.live.on::first-letter{animation:blink 1.2s steps(2) infinite}
+.lb li.new{animation:flash 2.4s ease-out}
+@keyframes flash{0%{background:rgba(60,226,122,.55);transform:scale(1.02)}100%{background:rgba(4,6,26,.45);transform:none}}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;max-width:min(92vw,460px);
+  font-size:.95rem;color:#fff;background:linear-gradient(var(--wa),var(--wb));border:3px solid var(--edge);border-radius:8px;box-shadow:0 0 0 3px var(--ink),4px 5px 0 rgba(0,0,0,.5);padding:10px 16px;animation:pop .25s ease-out}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- MULAI -->
+  <section id="s-start" class="stack">
+    <header class="logo">
+      <div class="eyebrow">Pendidikan Pancasila · Materi TKA SMA/MA/SMK</div>
+      <h1>PPKn<br><span>QUEST</span></h1>
+      <p class="sub">Legenda Nusantara</p>
+      <p class="lead">Pilih pahlawan, jelajahi empat area, dan kalahkan monster ancaman bangsa dengan jawaban yang tepat. Setiap jawaban benar memunculkan skill unik pahlawanmu. Jawaban salah membuat musuh menyerang, jadi jaga HP-mu sampai bertemu Naga Disintegrasi.</p>
+    </header>
+
+    <div class="win stack">
+      <h2>Pilih pahlawan</h2>
+      <div class="heroes" id="heroes" role="radiogroup" aria-label="Pilih pahlawan"></div>
+      <div class="win in hd" id="hdetail"></div>
+      <label class="fld" for="nm">Nama petualang
+        <input type="text" id="nm" maxlength="18" placeholder="Contoh: Rapsanjani" autocomplete="off">
+      </label>
+      <div class="row"><button class="btn big" id="go" type="button">▶ Mulai petualangan</button></div>
+    </div>
+
+    <div class="win stack">
+      <h2>Aturan permainan</h2>
+      <div class="rules">
+        <div><b>4 area, 20 soal</b>Hutan Sila, Benteng Konstitusi, Lembah Bhinneka, lalu Menara Nusantara dengan boss di soal terakhir.</div>
+        <div><b>Jawaban benar</b>Pahlawan memakai skill, musuh dikalahkan, dan skor bertambah. Bonus cepat dalam 25 detik dan bonus beruntun dari 3 jawaban benar.</div>
+        <div><b>Jawaban salah</b>Musuh menyerang. HP berkurang 15, boss 25. HP habis berarti petualangan berakhir.</div>
+        <div><b>Item</b>🧪 Ramuan memulihkan 30 HP. 📜 Gulungan 50:50 menyingkirkan dua pilihan salah. Setiap area bersih memberi 1 ramuan.</div>
+        <div><b>Soal sulit</b>Studi kasus dengan pilihan yang mirip, pilihan kompleks, sebab-akibat, klasifikasi, menjodohkan, dan isian.</div>
+        <div><b>Skor maksimal 300</b>Nilai 0–100 dihitung dari poin dasar jawaban. Skor akhir dikirim ke papan pahlawan yang diperbarui langsung (live) lewat Supabase Realtime.</div>
+      </div>
+    </div>
+
+    <div class="win stack">
+      <div class="row" style="justify-content:space-between"><div class="row"><h2>Papan pahlawan</h2><span class="live" data-live></span></div><button class="btn alt" id="rf" type="button" style="padding:6px 12px;font-size:.9rem">Muat ulang</button></div>
+      <div id="lb-start"></div>
+    </div>
+  </section>
+
+  <!-- PERTARUNGAN -->
+  <section id="s-quiz" hidden>
+    <div class="hud win">
+      <div class="hud-l"><span class="port" id="h-port"></span><div class="hud-n"><b id="h-name"></b><small id="h-class"></small></div></div>
+      <div class="hud-m">
+        <div class="lbl"><span>HP</span><span id="h-hp">100/100</span></div>
+        <div class="bar"><i id="h-bar"></i></div>
+        <div class="meta"><span>Lv <b id="h-lv">1</b></span><span>Combo ×<b id="h-combo">0</b></span><span>🧪 <b id="h-pot">2</b></span><span>📜 <b id="h-scr">2</b></span><span>🏆 #<b id="h-rank">–</b></span></div>
+      </div>
+      <div class="hud-r">
+        <div class="st"><small>SKOR</small><b id="h-score">0</b></div>
+        <div class="st"><small>WAKTU</small><b id="h-time">00:00</b></div>
+      </div>
+    </div>
+
+    <div class="scene a0" id="scene">
+      <div class="decor" id="decor"></div>
+      <div class="gr"></div>
+      <div class="banner" id="banner"></div>
+      <div class="unit hero" id="hero"><div class="spr" id="hero-spr">🦸</div><div class="sh"></div></div>
+      <div class="unit foe" id="foe"><div class="ename" id="e-name"></div><div class="ehp"><i id="e-hp"></i></div><div class="spr" id="e-spr">👻</div><div class="sh"></div></div>
+      <div id="fx"></div>
+    </div>
+
+    <div class="win qwin" id="qcard"></div>
+  </section>
+
+  <!-- HASIL -->
+  <section id="s-result" class="stack" hidden></section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ====== SUPABASE (dari file sebelumnya) ====== */
+var CFG = { url: 'https://cvkvsidmrcoqqbubqwoe.supabase.co', key: 'sb_publishable_0uIfl5wTEJjLuO6O69e8Vw_zKYyalUT', table: 'skor_kuis' };
+var ON = !/PROJECT-ID|ANON_PUBLIC_KEY/.test(CFG.url + CFG.key);
+var MAXSCORE = 300;
+
+/* ====== helper ====== */
+function h(tag, at) {
+  var e = document.createElement(tag);
+  if (at) for (var k in at) { var v = at[k];
+    if (k === 'class') e.className = v; else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, ''); else if (v !== false && v != null) e.setAttribute(k, v); }
+  for (var i = 2; i < arguments.length; i++) [].concat(arguments[i]).forEach(function (c) { if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c))); });
+  return e;
+}
+var $ = function (s) { return document.querySelector(s); };
+var L = ['A', 'B', 'C', 'D', 'E'];
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
+function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function fmt(ms) { var s = Math.floor(ms / 1000), m = Math.floor(s / 60); return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* ====== Supabase REST ====== */
+function api(path, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ apikey: CFG.key, 'Content-Type': 'application/json' }, opt.headers || {});
+  if (CFG.key.indexOf('sb_') !== 0) opt.headers.Authorization = 'Bearer ' + CFG.key;
+  return fetch(CFG.url + '/rest/v1/' + path, opt).then(function (r) {
+    if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + t.slice(0, 200)); });
+    return r.json();
+  });
+}
+/* ====== papan skor LIVE: Supabase Realtime (WebSocket) + polling cadangan ====== */
+var LB = { rows: null, boxes: {}, mine: null, live: false, err: null, newId: null };
+function sortRows(rows) {
+  return rows.sort(function (x, y) { return y.skor - x.skor || String(x.created_at || '').localeCompare(String(y.created_at || '')); });
+}
+function liveBadge() { var e = h('span', { class: 'live', 'data-live': '' }); paintBadge(e); return e; }
+function paintBadge(e) {
+  e.className = 'live' + (LB.live ? ' on' : '');
+  e.textContent = LB.live ? '● LIVE' : '○ SEGAR TIAP 15 DTK';
+}
+function setLive(v) { LB.live = v; document.querySelectorAll('[data-live]').forEach(paintBadge); }
+function board(box, mine) {
+  LB.boxes[box.id] = box; if (mine) LB.mine = mine;
+  renderBoards(); loadBoard();
+}
+function loadBoard() {
+  if (!ON) { renderBoards(); return; }
+  api(CFG.table + '?select=id,nama,avatar,skor,nilai,created_at&order=skor.desc,created_at.asc&limit=200').then(function (rows) {
+    LB.rows = rows; LB.err = null; renderBoards(); hudRank();
+  }).catch(function (e) { LB.err = e.message; renderBoards(); });
+}
+function renderBoards() {
+  Object.keys(LB.boxes).forEach(function (id) {
+    var box = LB.boxes[id];
+    if (!document.body.contains(box)) { delete LB.boxes[id]; return; }
+    var old = box.querySelector('.lbw'), top = old ? old.scrollTop : 0;
+    if (!ON) { box.replaceChildren(h('p', { class: 'mut' }, 'Supabase belum dikonfigurasi. Isi CFG.url dan CFG.key di dalam skrip.')); return; }
+    if (LB.rows === null) {
+      box.replaceChildren(LB.err ? h('div', {}, h('p', { class: 'mut' }, 'Papan pahlawan gagal dimuat.'), h('p', { class: 'mut', style: 'font-size:.8rem;word-break:break-all' }, 'Detail: ' + LB.err))
+        : h('p', { class: 'mut' }, 'Memuat papan pahlawan…'));
+      return;
+    }
+    if (!LB.rows.length) { box.replaceChildren(h('p', { class: 'mut' }, 'Belum ada pahlawan tercatat. Jadilah yang pertama!')); return; }
+    var wrap = h('div', { class: 'lbw' }, h('ol', { class: 'lb' }, LB.rows.map(function (r, i) {
+      return h('li', { class: (r.id === LB.mine ? 'me ' : '') + (r.id === LB.newId ? 'new' : '') },
+        h('span', { class: 'rk' }, i + 1), h('span', { class: 'nm' }, r.avatar + ' ' + r.nama),
+        h('span', { class: 'sc' }, r.skor + ' pt', h('small', {}, 'nilai ' + r.nilai)));
+    })));
+    box.replaceChildren(h('p', { class: 'mut', style: 'font-size:.85rem;margin-bottom:8px' }, 'Menampilkan ' + LB.rows.length + ' skor teratas. Gulir untuk peringkat lainnya.'), wrap);
+    var me = wrap.querySelector('.me');
+    if (me && !old) wrap.scrollTop = Math.max(0, me.offsetTop - wrap.clientHeight / 2); else wrap.scrollTop = top;
+  });
+}
+function toast(msg) {
+  var t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3600);
+}
+function onInsert(rec) {
+  if (!rec || rec.id == null) return;
+  if (LB.rows === null) { loadBoard(); return; }
+  if (LB.rows.some(function (r) { return r.id === rec.id; })) return;
+  LB.rows.push({ id: rec.id, nama: rec.nama, avatar: rec.avatar, skor: rec.skor, nilai: rec.nilai, created_at: rec.created_at });
+  sortRows(LB.rows); LB.rows = LB.rows.slice(0, 200);
+  LB.newId = rec.id; renderBoards(); hudRank();
+  setTimeout(function () { if (LB.newId === rec.id) { LB.newId = null; renderBoards(); } }, 2500);
+  var self = S && rec.nama === S.name && rec.skor === S.score && !$('#s-result').hidden;
+  if (!self) toast(rec.avatar + ' ' + rec.nama + ' masuk papan dengan ' + rec.skor + ' pt');
+}
+var RT = { ws: null, hb: null, t: null, retry: 0 };
+function rtRetry() { clearTimeout(RT.t); RT.retry++; RT.t = setTimeout(rtConnect, Math.min(15000, 1000 * Math.pow(2, RT.retry))); }
+function rtConnect() {
+  if (!ON || !window.WebSocket) return;
+  var ws, ref = 0, TOPIC = 'realtime:skor-live';
+  try { ws = new WebSocket(CFG.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(CFG.key) + '&vsn=1.0.0'); }
+  catch (e) { return rtRetry(); }
+  RT.ws = ws;
+  var send = function (o) { try { ws.send(JSON.stringify(o)); } catch (e) {} };
+  ws.onopen = function () {
+    send({ topic: TOPIC, event: 'phx_join', ref: String(++ref), join_ref: '1',
+      payload: { config: { broadcast: { self: false }, presence: { key: '' }, postgres_changes: [{ event: 'INSERT', schema: 'public', table: CFG.table }] } } });
+    clearInterval(RT.hb);
+    RT.hb = setInterval(function () { send({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(++ref) }); }, 25000);
+  };
+  ws.onmessage = function (m) {
+    var d; try { d = JSON.parse(m.data); } catch (e) { return; }
+    if (d.event === 'phx_reply' && d.topic === TOPIC) {
+      if (d.payload && d.payload.status === 'ok') { RT.retry = 0; setLive(true); loadBoard(); } else { setLive(false); }
+    } else if (d.event === 'postgres_changes') {
+      var rec = d.payload && d.payload.data && d.payload.data.record; onInsert(rec);
+    } else if (d.event === 'phx_error' || d.event === 'phx_close') { try { ws.close(); } catch (e) {} }
+  };
+  ws.onclose = function () { clearInterval(RT.hb); setLive(false); rtRetry(); };
+  ws.onerror = function () { try { ws.close(); } catch (e) {} };
+}
+setInterval(function () { if (!LB.live && !document.hidden && $('#s-quiz').hidden) loadBoard(); }, 15000);
+function rankNow() {
+  if (!LB.rows) return '–';
+  return 1 + LB.rows.filter(function (r) { return r.skor > S.score; }).length;
+}
+function hudRank() { if (S && !$('#s-quiz').hidden) $('#h-rank').textContent = rankNow(); }
+
+/* ====== data game ====== */
+var HEROES = [
+  { id: 'ksatria', ico: '🦸', name: 'Ksatria Garuda', role: 'Petarung', skill: 'Tebasan Sila', perk: 'Baju Baja', desc: 'Dua tebasan emas membelah musuh. Damage dari jawaban salah berkurang 40%.' },
+  { id: 'penyihir', ico: '🧙', name: 'Penyihir Bintang', role: 'Penyihir', skill: 'Hujan Meteor', perk: 'Mata Bijak', desc: 'Memanggil hujan meteor. Membawa 4 gulungan 50:50, pahlawan lain hanya 2.' },
+  { id: 'tabib', ico: '🧝', name: 'Tabib Cahaya', role: 'Penyembuh', skill: 'Cahaya Pemulih', perk: 'Berkah Pulih', desc: 'Cahaya suci menyerang musuh. Setiap jawaban benar penuh memulihkan 6 HP.' },
+  { id: 'ninja', ico: '🥷', name: 'Pendekar Bayangan', role: 'Pembunuh', skill: 'Tikaman Senyap', perk: 'Serangan Kritis', desc: 'Menghilang lalu menikam. 30% peluang kritikal pada jawaban benar, bonus +2 skor.' },
+  { id: 'penyair', ico: '🧑‍🎤', name: 'Penyair Nusantara', role: 'Pendukung', skill: 'Lagu Persatuan', perk: 'Irama Beruntun', desc: 'Lagu gelombang suara melukai musuh. Bonus beruntun menjadi +3, bukan +2.' },
+  { id: 'peri', ico: '🧚', name: 'Peri Pelindung', role: 'Pelindung', skill: 'Tameng Cahaya', perk: 'Tameng Pertama', desc: 'Bintang-bintang suci menyerang. Jawaban salah pertama di tiap area tidak melukai.' }
+];
+var AREAS = [
+  { name: 'Hutan Sila', el: 'Pancasila', decor: '🌲🌳🌲🌳🌲', E: [['Hantu Hoaks', '👻'], ['Siluman Egois', '👹'], ['Kelelawar Provokator', '🦇'], ['Ular Intoleransi', '🐍'], ['Serigala Individualis', '🐺']] },
+  { name: 'Benteng Konstitusi', el: 'UUD 1945', decor: '🏰🏛️🏰', E: [['Laba-laba Korupsi', '🕷️'], ['Kalajengking Suap', '🦂'], ['Golem Semena-mena', '🗿'], ['Tengkorak Pasal Palsu', '💀'], ['Zombi Aturan Usang', '🧟']] },
+  { name: 'Lembah Bhinneka', el: 'Bhinneka Tunggal Ika', decor: '🛕🌴⛩️🌴🛕', E: [['Raksasa Sukuisme', '👺'], ['Imp Diskriminasi', '😈'], ['Hantu Stereotip', '👻'], ['Ular Fanatisme', '🐍'], ['Kalajengking Prasangka', '🦂']] },
+  { name: 'Menara Nusantara', el: 'NKRI', decor: '🌋🗼🌋', E: [['Drone Mata-mata', '🛸'], ['Alien Radikalisme', '👽'], ['Robot Peretas', '🤖'], ['Monster Separatis', '👾'], ['Naga Disintegrasi', '🐉']] }
+];
+var OA = ['Pernyataan benar, sebab benar, dan keduanya berhubungan sebab-akibat',
+  'Pernyataan benar, sebab benar, tetapi keduanya tidak berhubungan sebab-akibat',
+  'Pernyataan benar, tetapi sebab salah', 'Pernyataan salah, tetapi sebab benar', 'Pernyataan dan sebab keduanya salah'];
+var TL = { s: 'Pilihan ganda', m: 'Pilihan kompleks', a: 'Sebab-akibat', k: 'Klasifikasi', j: 'Menjodohkan', i: 'Isian' };
+var HOW = { s: 'Pilih satu jawaban terbaik', m: 'Pilih semua pernyataan yang benar', a: 'Tentukan hubungan pernyataan dan sebab', k: 'Tentukan golongan setiap pernyataan', j: 'Pilih pasangan untuk setiap nomor', i: 'Ketik jawaban singkat' };
+
+/* t: s pilihan ganda | m pilihan kompleks | a sebab-akibat | k klasifikasi | j menjodohkan | i isian */
+var Q = [
+  /* ===== Area 1: Hutan Sila (Pancasila) ===== */
+  { a: 0, t: 's',
+    pas: 'Pemerintah kota merencanakan memindahkan pedagang kaki lima ke pasar baru. Sebagian pedagang menolak karena khawatir lokasinya sepi. Pemerintah lalu mengundang perwakilan pedagang, warga sekitar, dan tokoh masyarakat untuk bermusyawarah. Hasilnya, pemindahan dilakukan bertahap disertai pelatihan usaha dan promosi pasar baru bagi seluruh pedagang.',
+    q: 'Pernyataan yang paling tepat menunjukkan penerapan sila keempat dan sila kelima Pancasila pada kasus tersebut adalah ....',
+    o: ['Pemerintah menetapkan relokasi karena memiliki wewenang mengatur ketertiban umum di wilayahnya.',
+        'Keputusan diambil melalui musyawarah yang melibatkan pihak terdampak, dan hasilnya memperhatikan keadilan bagi pedagang maupun warga sekitar.',
+        'Pedagang yang menolak diminta menerima keputusan suara terbanyak agar relokasi tidak terhambat.',
+        'Pelatihan dan promosi diberikan karena pedagang merupakan kelompok yang paling membutuhkan bantuan negara.',
+        'Pemindahan bertahap dipilih supaya tidak ada pihak yang keberatan terhadap keputusan pemerintah.'],
+    c: 1,
+    x: 'Sila keempat tampak pada musyawarah yang melibatkan pihak terdampak, dan sila kelima pada hasil yang adil lewat pelatihan serta promosi bagi semua pedagang. Pilihan lain hanya menyebut wewenang pemerintah, memaksakan suara terbanyak (bukan mufakat), mengistimewakan satu kelompok, atau sekadar menghindari keberatan.' },
+  { a: 0, t: 'k',
+    pas: 'Sebagai ideologi terbuka, Pancasila memiliki tiga tingkat nilai: nilai dasar yang tetap, nilai instrumental yang dapat disesuaikan zaman, dan nilai praksis yang tampak dalam perbuatan nyata.',
+    q: 'Kelompokkan setiap contoh berikut ke tingkat nilai yang tepat!',
+    C: ['Nilai dasar', 'Nilai instrumental', 'Nilai praksis'],
+    S: [['Kemanusiaan yang adil dan beradab sebagai asas yang tetap dan tidak berubah', 0],
+        ['Undang-undang yang mengatur perlindungan anak dan penyandang disabilitas', 1],
+        ['Warga bergotong royong membangun jembatan desa setiap akhir pekan', 2],
+        ['Peraturan daerah tentang pelestarian bahasa daerah', 1]],
+    x: 'Nilai dasar bersifat tetap dan terkandung dalam sila-sila Pancasila. Nilai instrumental adalah penjabarannya dalam UUD, undang-undang, dan peraturan lain yang dapat disesuaikan zaman. Nilai praksis adalah pelaksanaan nyata dalam kehidupan sehari-hari, seperti gotong royong.' },
+  { a: 0, t: 'a',
+    P: 'Pancasila berfungsi sebagai sumber dari segala sumber hukum negara.',
+    R: 'Setiap peraturan perundang-undangan di Indonesia harus sama persis dengan bunyi kelima sila Pancasila.',
+    c: 2,
+    x: 'Pernyataan benar. Sebab salah: peraturan harus bersumber dari dan tidak boleh bertentangan dengan nilai-nilai Pancasila, bukan sama persis dengan bunyi silanya. Peraturan justru menjabarkan nilai tersebut dalam bentuk norma yang lebih rinci.' },
+  { a: 0, t: 'm',
+    pas: 'Seorang kepala desa membagikan bantuan sosial hanya kepada keluarga dan pendukungnya, padahal warga lain juga memenuhi syarat. Warga memprotes dan meminta musyawarah desa untuk mendata ulang penerima bantuan.',
+    q: 'Pilih semua pernyataan yang benar tentang kasus tersebut!',
+    o: ['Tindakan kepala desa bertentangan dengan sila kelima karena bantuan tidak dibagikan secara adil.',
+        'Protes warga bertentangan dengan sila keempat karena mengganggu keputusan pemimpin.',
+        'Protes warga merupakan partisipasi yang sejalan dengan semangat kedaulatan rakyat dalam sila keempat.',
+        'Musyawarah desa untuk mendata ulang adalah cara penyelesaian yang sejalan dengan sila keempat.',
+        'Pendataan ulang tidak perlu dilakukan karena kepala desa dipilih langsung sehingga keputusannya selalu benar.'],
+    c: [0, 2, 3],
+    x: 'Membagi bantuan hanya kepada pendukung melanggar keadilan sosial (sila kelima). Protes warga adalah partisipasi dalam kedaulatan rakyat, dan musyawarah untuk mendata ulang sejalan dengan sila keempat. Menganggap pemimpin terpilih selalu benar atau protes sebagai gangguan adalah keliru.' },
+  { a: 0, t: 'i',
+    pas: 'Pembukaan UUD NRI Tahun 1945 terdiri dari empat alinea.',
+    q: 'Rumusan Pancasila sebagai dasar negara tercantum dalam Pembukaan UUD NRI 1945 pada alinea ke-____ (tulis angka atau kata).',
+    ans: ['4', 'empat', 'keempat', 'iv', 'ke 4', 'alinea 4'], d: 'Alinea ke-4 (keempat)',
+    x: 'Alinea keempat memuat tujuan negara, ketentuan bentuk negara dan pemerintahan, serta rumusan lima sila Pancasila sebagai dasar negara.' },
+
+  /* ===== Area 2: Benteng Konstitusi (UUD 1945) ===== */
+  { a: 1, t: 's',
+    pas: 'Sekelompok warga menilai sebuah peraturan menteri bertentangan dengan undang-undang. Kelompok lain menilai sebuah undang-undang bertentangan dengan UUD NRI Tahun 1945.',
+    q: 'Lembaga yang berwenang menguji masing-masing peraturan tersebut adalah ....',
+    o: ['Mahkamah Konstitusi menguji peraturan menteri, Mahkamah Agung menguji undang-undang.',
+        'Mahkamah Agung menguji peraturan menteri, Mahkamah Konstitusi menguji undang-undang.',
+        'Mahkamah Agung menguji keduanya karena merupakan puncak peradilan.',
+        'Mahkamah Konstitusi menguji keduanya karena menjaga konstitusi.',
+        'Mahkamah Agung menguji peraturan menteri, DPR menguji undang-undang.'],
+    c: 1,
+    x: 'Peraturan menteri berada di bawah undang-undang, sehingga pengujiannya terhadap undang-undang menjadi wewenang Mahkamah Agung (Pasal 24A). Pengujian undang-undang terhadap UUD adalah wewenang Mahkamah Konstitusi (Pasal 24C). DPR membentuk undang-undang, bukan mengujinya.' },
+  { a: 1, t: 'a',
+    P: 'Presiden dapat diberhentikan dalam masa jabatannya karena melanggar hukum tanpa harus ada putusan lembaga peradilan.',
+    R: 'Pemberhentian Presiden hanya memerlukan keputusan MPR atas usul DPR.',
+    c: 4,
+    x: 'Menurut Pasal 7A dan 7B UUD NRI 1945, usul DPR harus lebih dulu diperiksa dan diputus oleh Mahkamah Konstitusi bahwa Presiden terbukti melanggar. Baru setelah itu DPR meneruskan usul ke MPR untuk diputuskan dalam sidang paripurna. Karena putusan MK wajib ada, pernyataan dan sebab sama-sama salah.' },
+  { a: 1, t: 'j',
+    pas: 'UUD NRI Tahun 1945 membagi kewenangan kekuasaan kehakiman dan lembaga negara lain.',
+    q: 'Jodohkan setiap situasi dengan lembaga yang berwenang menanganinya!',
+    L: [['Dua lembaga negara bersengketa tentang kewenangan yang diberikan oleh UUD', 2],
+        ['Pengusulan calon hakim agung kepada DPR untuk mendapat persetujuan', 3],
+        ['Terdakwa mengajukan kasasi atas putusan pengadilan tinggi', 0],
+        ['Rancangan undang-undang tentang otonomi daerah diajukan oleh wakil daerah', 1]],
+    O: ['Mahkamah Agung', 'Dewan Perwakilan Daerah', 'Mahkamah Konstitusi', 'Komisi Yudisial'],
+    x: 'Sengketa kewenangan lembaga negara diputus oleh Mahkamah Konstitusi. Komisi Yudisial mengusulkan calon hakim agung kepada DPR. Kasasi adalah wewenang Mahkamah Agung. DPD dapat mengajukan RUU yang berkaitan dengan otonomi daerah.' },
+  { a: 1, t: 's',
+    pas: 'Seorang warga mengunggah konten berisi ujaran kebencian terhadap kelompok agama tertentu. Ia beralasan bahwa unggahan itu adalah bagian dari kebebasan berpendapat yang dijamin UUD NRI Tahun 1945.',
+    q: 'Pernyataan yang paling tepat menilai alasan tersebut adalah ....',
+    o: ['Dibenarkan karena Pasal 28E ayat (3) menjamin kebebasan menyatakan pendapat tanpa pembatasan apa pun.',
+        'Dapat dibatasi karena Pasal 28J mewajibkan setiap orang menghormati hak asasi orang lain dan membolehkan pembatasan melalui undang-undang.',
+        'Tidak dapat dipidana karena kebebasan berpendapat termasuk hak yang tidak dapat dikurangi dalam keadaan apa pun.',
+        'Hanya melanggar etika sehingga negara tidak berhak mencampuri urusan tersebut.',
+        'Sah selama dilakukan di ruang digital karena ruang digital tidak diatur dalam konstitusi.'],
+    c: 1,
+    x: 'Pasal 28J mewajibkan setiap orang menghormati hak asasi orang lain dan mengatur bahwa pembatasan melalui undang-undang dapat dilakukan demi menjamin hak dan kebebasan orang lain serta ketertiban umum. Kebebasan berpendapat tidak termasuk hak yang tidak dapat dikurangi (Pasal 28I ayat 1).' },
+  { a: 1, t: 'm',
+    q: 'Pilih semua pernyataan yang sesuai dengan Pasal 33 UUD NRI Tahun 1945!',
+    o: ['Perekonomian disusun sebagai usaha bersama berdasar atas asas kekeluargaan.',
+        'Cabang produksi yang penting bagi negara dan menguasai hajat hidup orang banyak dikuasai oleh negara.',
+        'Bumi, air, dan kekayaan alam di dalamnya dikuasai oleh negara dan dipergunakan untuk sebesar-besar kemakmuran rakyat.',
+        'Seluruh cabang produksi wajib dimiliki dan dikelola langsung oleh pemerintah pusat.',
+        'Pelaku usaha swasta dilarang ikut serta dalam kegiatan perekonomian nasional.'],
+    c: [0, 1, 2],
+    x: 'Pasal 33 menegaskan asas kekeluargaan, penguasaan negara atas cabang produksi penting dan kekayaan alam untuk sebesar-besar kemakmuran rakyat. Pasal ini tidak mewajibkan negara memiliki seluruh cabang produksi dan tidak melarang swasta berusaha.' },
+
+  /* ===== Area 3: Lembah Bhinneka (Bhinneka Tunggal Ika) ===== */
+  { a: 2, t: 'k',
+    pas: 'Dalam kehidupan masyarakat majemuk, sikap terhadap perbedaan dapat berupa toleransi, etnosentrisme, atau diskriminasi.',
+    q: 'Kelompokkan setiap sikap berikut ke istilah yang tepat!',
+    C: ['Etnosentrisme', 'Toleransi', 'Diskriminasi'],
+    S: [['Menilai tradisi pernikahan suku lain aneh karena berbeda dengan tradisi suku sendiri', 0],
+        ['Menghadiri undangan perayaan hari besar tetangga yang berbeda agama dan ikut menjaga ketertiban', 1],
+        ['Menolak pelamar kerja yang kompeten hanya karena berasal dari suku tertentu', 2],
+        ['Menganggap bahasa daerah sendiri paling baik sehingga bahasa daerah lain tidak layak dipelajari', 0]],
+    x: 'Etnosentrisme adalah menilai budaya lain dengan ukuran budaya sendiri dan menganggap budaya sendiri paling baik. Toleransi tampak pada sikap menghargai dan ikut menjaga kerukunan. Diskriminasi adalah perlakuan tidak adil karena latar belakang, seperti menolak pelamar kompeten hanya karena sukunya.' },
+  { a: 2, t: 's',
+    pas: 'Di sebuah desa wisata, warga dari tiga suku bekerja sama mengelola homestay. Ketegangan muncul ketika pembagian keuntungan dirasa lebih menguntungkan suku yang jumlahnya paling banyak.',
+    q: 'Upaya yang paling tepat untuk memperkuat integrasi di tingkat lokal pada kasus tersebut adalah ....',
+    o: ['Membagi keuntungan menurut jumlah penduduk tiap suku agar sesuai dengan populasinya.',
+        'Memisahkan pengelolaan homestay per suku agar tidak terjadi perselisihan.',
+        'Menyusun kesepakatan pembagian keuntungan yang adil melalui dialog seluruh perwakilan suku, lalu menjadikannya aturan bersama.',
+        'Meminta pemerintah daerah menetapkan pembagian secara sepihak agar warga tidak berdebat.',
+        'Menghentikan kerja sama sementara sampai ketegangan reda dengan sendirinya.'],
+    c: 2,
+    x: 'Persoalannya adalah keadilan pembagian hasil. Dialog seluruh perwakilan suku yang menghasilkan aturan bersama menyelesaikan akar masalah dan memperkuat rasa saling percaya. Pilihan lain mempertajam pemisahan, memaksakan keputusan sepihak, atau membiarkan masalah.' },
+  { a: 2, t: 'a',
+    P: 'Penyeragaman budaya adalah cara paling efektif untuk memperkuat integrasi nasional.',
+    R: 'Bhinneka Tunggal Ika mengakui keberagaman sebagai kekayaan bangsa.',
+    c: 3,
+    x: 'Sebab benar. Pernyataan salah karena Bhinneka Tunggal Ika tidak menyeragamkan, tetapi mempersatukan perbedaan melalui sikap saling menghargai. Penyeragaman justru dapat memicu penolakan dan perpecahan.' },
+  { a: 2, t: 'i',
+    pas: 'Lambang negara dan semboyannya diatur dalam UUD NRI Tahun 1945.',
+    q: 'Semboyan Bhinneka Tunggal Ika tercantum bersama lambang negara Garuda Pancasila dalam Pasal ____ UUD NRI 1945 (tulis nomor pasal beserta hurufnya).',
+    ans: ['36a', '36 a', 'pasal 36a', 'pasal 36 a'], d: 'Pasal 36A',
+    x: 'Pasal 36A UUD NRI 1945 menyatakan bahwa lambang negara ialah Garuda Pancasila dengan semboyan Bhinneka Tunggal Ika. Semboyan itu berasal dari Kakawin Sutasoma karya Mpu Tantular.' },
+  { a: 2, t: 'j',
+    pas: 'Integrasi nasional dibangun dalam berbagai bidang kehidupan.',
+    q: 'Jodohkan setiap upaya dengan jenis integrasi nasional yang paling tepat!',
+    L: [['Pembangunan jalan tol laut agar distribusi barang antarpulau lancar', 3],
+        ['Pemilu serentak yang diikuti warga negara di berbagai daerah', 2],
+        ['Pertukaran pelajar antardaerah dan penggunaan bahasa Indonesia sebagai bahasa persatuan', 0],
+        ['Seluruh organisasi kemasyarakatan menjadikan Pancasila sebagai asas', 1]],
+    O: ['Integrasi sosial budaya', 'Integrasi ideologi', 'Integrasi politik', 'Integrasi ekonomi'],
+    x: 'Jalan tol laut menghubungkan pasar antarpulau (ekonomi). Pemilu serentak melibatkan semua warga dalam proses politik (politik). Pertukaran pelajar dan bahasa persatuan memperkuat hubungan sosial budaya. Pancasila sebagai asas organisasi memperkuat kesatuan ideologi.' },
+
+  /* ===== Area 4: Menara Nusantara (NKRI) ===== */
+  { a: 3, t: 's',
+    pas: 'Sebelum 1957, wilayah laut Indonesia mengacu pada Ordonansi 1939 yang menetapkan laut teritorial sejauh 3 mil dari garis pantai tiap pulau, sehingga laut di antara pulau-pulau dianggap perairan bebas.',
+    q: 'Perubahan paling mendasar bagi keutuhan wilayah NKRI yang dihasilkan oleh Deklarasi Djuanda 1957 adalah ....',
+    o: ['Laut antarpulau diakui sebagai satu kesatuan dengan daratan sehingga menjadi bagian wilayah NKRI.',
+        'Zona ekonomi eksklusif Indonesia ditetapkan sejauh 200 mil laut dari garis pangkal.',
+        'Indonesia mendapat pengakuan internasional sebagai negara merdeka dan berdaulat.',
+        'Seluruh pulau terluar ditetapkan sebagai daerah otonomi khusus.',
+        'Laut teritorial Indonesia dikembalikan menjadi 3 mil dari garis pantai tiap pulau.'],
+    c: 0,
+    x: 'Deklarasi Djuanda 13 Desember 1957 menyatakan laut di antara dan di sekitar pulau-pulau Indonesia sebagai satu kesatuan wilayah dengan daratan (konsep negara kepulauan). Zona ekonomi eksklusif 200 mil laut baru diatur kemudian dalam hukum laut internasional (UNCLOS 1982).' },
+  { a: 3, t: 'k',
+    pas: 'Ketahanan nasional memiliki delapan gatra: Tri Gatra (aspek alamiah) dan Panca Gatra (aspek sosial).',
+    q: 'Kelompokkan setiap unsur berikut ke gatra yang tepat!',
+    C: ['Tri Gatra (alamiah)', 'Panca Gatra (sosial)'],
+    S: [['Letak Indonesia di antara dua benua dan dua samudra', 0],
+        ['Kekayaan hasil tambang dan hutan', 0],
+        ['Kerukunan antarumat beragama dan pelestarian budaya daerah', 1],
+        ['Kekuatan sistem pertahanan dan keamanan rakyat semesta', 1]],
+    x: 'Tri Gatra meliputi posisi dan lokasi geografis, kekayaan alam, dan kependudukan. Panca Gatra meliputi ideologi, politik, ekonomi, sosial budaya, serta pertahanan dan keamanan. Kerukunan dan budaya masuk sosial budaya, sedangkan pertahanan keamanan rakyat semesta masuk pertahanan keamanan.' },
+  { a: 3, t: 'm',
+    pas: 'Sebuah lembaga negara diretas sehingga data penduduk bocor. Tidak lama kemudian muncul gelombang hoaks yang memecah belah warga di media sosial.',
+    q: 'Pilih semua pernyataan yang benar tentang peristiwa tersebut!',
+    o: ['Peristiwa tersebut termasuk ancaman nonmiliter di bidang siber dan informasi.',
+        'Penanganannya hanya menjadi tugas TNI karena menyangkut kedaulatan negara.',
+        'Warga dapat ikut membela negara dengan menyaring dan tidak menyebarkan hoaks.',
+        'Penguatan literasi digital dan keamanan data merupakan bentuk bela negara nonfisik.',
+        'Peristiwa tersebut bukan ancaman bagi NKRI karena tidak ada serangan bersenjata.'],
+    c: [0, 2, 3],
+    x: 'Peretasan dan hoaks adalah ancaman nonmiliter yang dapat melemahkan persatuan dan keamanan. Pertahanan negara melibatkan seluruh rakyat (sishankamrata, Pasal 30), sehingga warga dapat membela negara secara nonfisik melalui literasi digital dan menolak hoaks. Ancaman tidak harus berupa serangan bersenjata.' },
+  { a: 3, t: 'a',
+    P: 'Wawasan Nusantara memandang laut sebagai pemersatu, bukan pemisah, pulau-pulau Indonesia.',
+    R: 'Indonesia memiliki belasan ribu pulau.',
+    c: 1,
+    x: 'Keduanya benar, tetapi jumlah pulau tidak menjelaskan mengapa laut dipandang sebagai pemersatu. Alasannya adalah cara pandang bangsa yang melihat darat, laut, dan udara sebagai satu kesatuan wilayah, bukan banyaknya pulau.' },
+  { a: 3, t: 's', boss: true,
+    pas: 'Sekelompok tokoh dari sebuah daerah menuntut pemisahan diri dengan alasan pembangunan tidak merata dan kekayaan alam daerah dinikmati pusat. Pemerintah memilih dialog, memperluas pembangunan infrastruktur dan layanan dasar di daerah itu, serta menerapkan otonomi khusus sesuai undang-undang.',
+    q: 'Langkah pemerintah tersebut paling tepat dijelaskan sebagai ....',
+    o: ['pendekatan koersif untuk menekan gerakan separatis dengan kekuatan militer.',
+        'pendekatan yang menangani akar masalah melalui keadilan pembangunan dan pengakuan kekhususan daerah, sambil menjaga bentuk NKRI sesuai konstitusi.',
+        'pemberian kemerdekaan terbatas agar tuntutan pemisahan diri tidak berkembang.',
+        'pengalihan seluruh urusan pemerintahan, termasuk pertahanan dan politik luar negeri, kepada daerah.',
+        'penerapan sentralisasi penuh untuk mencegah tuntutan serupa dari daerah lain.'],
+    c: 1,
+    x: 'Disintegrasi sering berakar pada ketidakadilan pembangunan. Pemerintah menjawabnya dengan dialog, pemerataan, dan otonomi khusus (Pasal 18B mengakui satuan pemerintahan daerah yang bersifat khusus atau istimewa), tanpa mengubah bentuk NKRI yang menurut Pasal 37 ayat (5) tidak dapat diubah. Urusan pertahanan dan politik luar negeri tetap menjadi urusan pemerintah pusat.' }
+];
+
+/* ====== preferensi ====== */
+var KEY = 'ppkn-quest-v1', pref = {};
+try { pref = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+var heroId = (pref.h && HEROES.some(function (x) { return x.id === pref.h; })) ? pref.h : HEROES[0].id;
+function heroOf(id) { return HEROES.filter(function (x) { return x.id === id; })[0]; }
+$('#nm').value = pref.n || '';
+
+function showDetail() {
+  var H = heroOf(heroId);
+  $('#hdetail').replaceChildren(h('div', { class: 'big', 'aria-hidden': 'true' }, H.ico),
+    h('div', {}, h('p', {}, h('b', {}, H.name), ' · ' + H.role),
+      h('p', {}, h('b', {}, 'Skill: '), H.skill),
+      h('p', {}, h('b', {}, H.perk + ': '), H.desc)));
+}
+HEROES.forEach(function (H) {
+  var i = h('input', { type: 'radio', name: 'hero', value: H.id, 'aria-label': H.name, onchange: function () { heroId = H.id; showDetail(); } });
+  if (H.id === heroId) i.checked = true;
+  $('#heroes').append(h('label', { class: 'hc' }, i, h('span', { class: 'card' }, h('span', { class: 'e' }, H.ico), H.name)));
+});
+showDetail();
+function show(id) { ['start', 'quiz', 'result'].forEach(function (s) { $('#s-' + s).hidden = s !== id; }); window.scrollTo(0, 0); }
+board($('#lb-start')); rtConnect();
+$('#rf').addEventListener('click', function () { board($('#lb-start')); });
+
+/* ====== efek visual ====== */
+function ctr(el) {
+  var s = $('#scene').getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: r.left - s.left + r.width / 2, y: r.top - s.top + r.height / 2 };
+}
+function fxl() { return $('#fx'); }
+function done(an, el) { an.onfinish = function () { el.remove(); }; an.oncancel = function () { el.remove(); }; }
+function fly(txt, a, b, o) {
+  o = o || {};
+  var e = h('span', { class: 'fx' }, txt); e.style.fontSize = (o.size || 28) + 'px'; fxl().append(e);
+  var T = function (p, r, s) { return 'translate(' + p.x + 'px,' + p.y + 'px) translate(-50%,-50%) rotate(' + r + 'deg) scale(' + s + ')'; };
+  var an = e.animate([{ transform: T(a, o.r0 || 0, o.s0 == null ? 1 : o.s0), opacity: o.o0 == null ? 1 : o.o0 },
+    { transform: T(b, o.r1 || 0, o.s1 == null ? 1 : o.s1), opacity: o.o1 == null ? 1 : o.o1 }],
+    { duration: o.dur || 500, delay: o.delay || 0, easing: o.ease || 'ease-in', fill: 'both' });
+  done(an, e);
+}
+function ring(p, o) {
+  o = o || {}; var sz = o.size || 60;
+  var e = h('div', { class: 'fxd' });
+  e.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;border:3px solid ' + (o.color || '#fff') + ';border-radius:50%;left:' + (p.x - sz / 2) + 'px;top:' + (p.y - sz / 2) + 'px;box-shadow:0 0 12px ' + (o.color || '#fff');
+  fxl().append(e);
+  done(e.animate([{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(' + (o.to || 2) + ')', opacity: 0 }], { duration: o.dur || 520, easing: 'ease-out' }), e);
+}
+function slash(p, deg) {
+  var e = h('div', { class: 'fxd slash' }); e.style.left = p.x + 'px'; e.style.top = p.y + 'px'; fxl().append(e);
+  var T = function (s) { return 'translate(-50%,-50%) rotate(' + deg + 'deg) scaleX(' + s + ')'; };
+  done(e.animate([{ transform: T(0), opacity: 1 }, { transform: T(1), opacity: 1, offset: .5 }, { transform: T(1.15), opacity: 0 }], { duration: 320, easing: 'ease-out' }), e);
+}
+function beam(p, color) {
+  var e = h('div', { class: 'fxd' });
+  e.style.cssText = 'left:' + (p.x - 22) + 'px;top:0;width:44px;height:100%;background:linear-gradient(90deg,transparent,' + color + ',transparent);box-shadow:0 0 24px ' + color;
+  fxl().append(e);
+  done(e.animate([{ transform: 'scaleX(.2)', opacity: 0 }, { transform: 'scaleX(1)', opacity: .95, offset: .35 }, { transform: 'scaleX(1.3)', opacity: 0 }], { duration: 520, easing: 'ease-out' }), e);
+}
+function burst(p, txt, n, r) {
+  for (var i = 0; i < n; i++) {
+    var ang = Math.PI * 2 * i / n;
+    fly(txt, p, { x: p.x + Math.cos(ang) * r, y: p.y + Math.sin(ang) * r }, { dur: 480, size: 18, o1: 0, ease: 'ease-out' });
+  }
+}
+function floatT(txt, p, color, big) {
+  var e = h('span', { class: 'fxd num' }, txt); e.style.left = p.x + 'px'; e.style.top = (p.y - 30) + 'px'; e.style.color = color || '#fff';
+  if (big) e.style.fontSize = '1.2rem';
+  fxl().append(e);
+  done(e.animate([{ transform: 'translate(-50%,0) scale(.6)', opacity: 0 }, { transform: 'translate(-50%,-22px) scale(1.15)', opacity: 1, offset: .25 },
+    { transform: 'translate(-50%,-56px) scale(1)', opacity: 0 }], { duration: 1050, easing: 'ease-out' }), e);
+}
+function banner(txt, ms) {
+  var b = $('#banner'); b.textContent = txt;
+  if (reduced) { b.style.opacity = 1; setTimeout(function () { b.style.opacity = 0; }, ms || 1000); return; }
+  b.animate([{ opacity: 0, transform: 'translate(-50%,-10px)' }, { opacity: 1, transform: 'translate(-50%,0)', offset: .15 }, { opacity: 1, transform: 'translate(-50%,0)', offset: .8 }, { opacity: 0, transform: 'translate(-50%,-6px)' }], { duration: ms || 1100, fill: 'none' });
+}
+function lunge(sel, dx) {
+  if (reduced) return;
+  $(sel).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + dx + 'px)', offset: .45 }, { transform: 'translateX(' + dx + 'px)', offset: .62 }, { transform: 'translateX(0)' }], { duration: 760, easing: 'ease-in-out' });
+}
+function shakeUnit(sel, filter) {
+  if (reduced) return;
+  $(sel).animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+  $(sel + ' .spr').animate([{ filter: 'brightness(1)' }, { filter: filter || 'brightness(3) saturate(0)' }, { filter: 'brightness(1)' }], { duration: 300 });
+}
+
+/* ====== skill tiap pahlawan: promise selesai saat serangan mengenai musuh ====== */
+var HFX = {
+  ksatria: async function () {
+    var H = ctr($('#hero-spr')), E = ctr($('#e-spr'));
+    lunge('#hero', E.x - H.x - 70); await wait(300);
+    slash(E, -38); await wait(140); slash(E, 38); burst(E, '✨', 6, 46); await wait(200);
+  },
+  penyihir: async function () {
+    var H = ctr($('#hero-spr')), E = ctr($('#e-spr'));
+    ring(H, { color: '#b983ff', to: 2.4 });
+    for (var i = 0; i < 6; i++) {
+      fly('☄️', { x: E.x - 150 - i * 24, y: -30 }, { x: E.x + (i - 2) * 16, y: E.y + 4 }, { dur: 520, delay: i * 110, size: 30, ease: 'ease-in' });
+      if (i % 2 === 0) (function (px, dl) { setTimeout(function () { burst(px, '💥', 3, 26); }, dl); })({ x: E.x + (i - 2) * 16, y: E.y + 4 }, 520 + i * 110);
+    }
+    await wait(1000);
+  },
+  tabib: async function () {
+    var H = ctr($('#hero-spr')), E = ctr($('#e-spr'));
+    ring(H, { color: '#6cf0a5', to: 2.6 });
+    for (var i = 0; i < 5; i++) fly('✨', { x: H.x + (i - 2) * 14, y: H.y + 10 }, { x: H.x + (i - 2) * 18, y: H.y - 70 }, { dur: 600, delay: i * 70, o1: 0, size: 20, ease: 'ease-out' });
+    await wait(260);
+    for (var k = 0; k < 3; k++) fly('💚', H, E, { dur: 420, delay: k * 90, size: 24, ease: 'ease-in' });
+    await wait(560); beam(E, '#9dffc8'); ring(E, { color: '#9dffc8' }); await wait(240);
+  },
+  ninja: async function (crit) {
+    var H = ctr($('#hero-spr')), E = ctr($('#e-spr'));
+    if (!reduced) $('#hero').animate([{ opacity: 1 }, { opacity: .1, offset: .25 }, { opacity: .1, offset: .7 }, { opacity: 1 }], { duration: 780 });
+    lunge('#hero', E.x - H.x - 60);
+    fly('💨', H, E, { dur: 300, size: 32, o1: 0 }); await wait(340);
+    [-30, 30, 90, 0].forEach(function (d, i) { setTimeout(function () { slash(E, d); }, i * 90); });
+    if (crit) { setTimeout(function () { burst(E, '💥', 6, 52); ring(E, { color: '#ff6b81', to: 3 }); }, 380); }
+    await wait(480);
+  },
+  penyair: async function () {
+    var H = ctr($('#hero-spr')), E = ctr($('#e-spr'));
+    ring(H, { color: '#ffb454', to: 2.2 });
+    for (var i = 0; i < 6; i++) {
+      var amp = (i % 2 ? -1 : 1) * 18;
+      fly(i % 2 ? '🎶' : '🎵', { x: H.x + 14, y: H.y - 8 }, { x: E.x, y: E.y + amp }, { dur: 560, delay: i * 95, size: 24, r1: i % 2 ? 20 : -20, ease: 'ease-in-out' });
+    }
+    await wait(760); ring(E, { color: '#ffb454', to: 2.6 }); await wait(260);
+  },
+  peri: async function () {
+    var H = ctr($('#hero-spr')), E = ctr($('#e-spr'));
+    ring(H, { color: '#7fd8ff', size: 80, to: 1.5, dur: 700 });
+    for (var i = 0; i < 5; i++) fly('⭐', { x: H.x, y: H.y - 20 }, { x: E.x + (i - 2) * 10, y: E.y + (i - 2) * 8 }, { dur: 480, delay: i * 90, size: 22, r1: 360 });
+    await wait(840); burst(E, '✨', 8, 50); ring(E, { color: '#fff', to: 2.4 }); await wait(260);
+  }
+};
+
+/* ====== state ====== */
+var S = null, UI = {}, timer = null;
+function cur() { return Q[S.order[S.i]]; }
+function build() {
+  var order = [], inArea = [];
+  AREAS.forEach(function (_, ai) {
+    var ids = Q.map(function (q, i) { return i; }).filter(function (i) { return Q[i].a === ai; });
+    ids = shuffle(ids);
+    ids.sort(function (x, y) { return (Q[x].boss ? 1 : 0) - (Q[y].boss ? 1 : 0); });
+    ids.forEach(function (id, k) { order.push(id); inArea.push(k); });
+  });
+  return { order: order, inArea: inArea };
+}
+function startGame() {
+  var name = ($('#nm').value || '').trim() || 'Petualang';
+  try { localStorage.setItem(KEY, JSON.stringify({ n: ($('#nm').value || '').trim(), h: heroId })); } catch (e) {}
+  var H = heroOf(heroId), b = build();
+  S = { hero: H, name: name, hp: 100, potions: 2, scrolls: H.id === 'penyihir' ? 4 : 2, lv: 1, score: 0, base: 0, streak: 0, best: 0, full: 0,
+    order: b.order, inArea: b.inArea, i: 0, log: [], shield: {}, t0: Date.now(), qt: Date.now(), done: false, busy: false, over: false, saved: false };
+  $('#h-port').textContent = H.ico; $('#h-name').textContent = name; $('#h-class').textContent = H.name + ' · ' + H.skill;
+  $('#hero-spr').textContent = H.ico;
+  show('quiz'); renderQ(true);
+  clearInterval(timer); timer = setInterval(function () { $('#h-time').textContent = fmt(Date.now() - S.t0); }, 500);
+}
+function hud() {
+  $('#h-hp').textContent = S.hp + '/100';
+  var bar = $('#h-bar'); bar.style.width = S.hp + '%'; bar.className = S.hp <= 25 ? 'low' : S.hp <= 50 ? 'mid' : '';
+  $('#h-lv').textContent = S.lv; $('#h-combo').textContent = S.streak; $('#h-pot').textContent = S.potions; $('#h-scr').textContent = S.scrolls;
+  $('#h-score').textContent = S.score; $('#h-rank').textContent = rankNow();
+  $('#h-time').textContent = fmt(Date.now() - S.t0);
+}
+function setScene(q) {
+  var A = AREAS[q.a], E = A.E[S.inArea[S.i]];
+  var sc = $('#scene'); sc.className = 'scene a' + q.a;
+  $('#decor').textContent = A.decor;
+  var foe = $('#foe'); foe.className = 'unit foe' + (q.boss ? ' boss' : ''); foe.style.visibility = '';
+  $('#e-name').textContent = (q.boss ? 'BOSS · ' : '') + E[0];
+  $('#e-spr').textContent = E[1];
+  $('#e-hp').style.width = '100%';
+  [foe, $('#hero'), $('#e-spr'), $('#hero-spr')].forEach(function (n) { n.getAnimations().forEach(function (a) { if (a.fill === 'forwards' || a.fill === 'both' || true) a.cancel(); }); });
+  $('#fx').replaceChildren();
+}
+
+/* ====== render soal ====== */
+function renderQ(first) {
+  var q = cur(), c = $('#qcard'); c.replaceChildren();
+  S.done = false; S.busy = false; S.sel = null; S.sels = []; S.txt = ''; S.hinted = false; S.qt = Date.now();
+  S.perm = (q.t === 's' || q.t === 'm') ? shuffle(range(q.o.length)) : null;
+  S.ans = q.t === 'j' ? q.L.map(function () { return null; }) : q.t === 'k' ? q.S.map(function () { return null; }) : null;
+  setScene(q); hud();
+  if (S.inArea[S.i] === 0) banner('AREA ' + (q.a + 1) + ' · ' + AREAS[q.a].name, 1700);
+  else if (q.boss) banner('⚠ BOSS · Naga Disintegrasi ⚠', 1500);
+  UI = { opts: [], rows: [], items: {} };
+
+  c.append(h('div', { class: 'chips' },
+    h('span', { class: 'chip k' }, 'SOAL ' + (S.i + 1) + '/' + S.order.length),
+    h('span', { class: 'chip' }, AREAS[q.a].el), h('span', { class: 'chip' }, TL[q.t])));
+  if (q.pas) c.append(h('div', { class: 'pas' }, h('p', {}, q.pas)));
+  if (q.t === 'a') c.append(h('div', { class: 'pas' }, h('p', {}, h('b', {}, 'Pernyataan: '), q.P), h('p', {}, h('b', {}, 'Sebab: '), q.R)));
+  c.append(h('p', { class: 'qtext' }, q.q || 'Tentukan hubungan antara pernyataan dan sebab di atas!'), h('p', { class: 'hint' }, HOW[q.t]));
+
+  var body;
+  if (q.t === 's' || q.t === 'm') {
+    body = h('div', { class: 'opts', role: q.t === 's' ? 'radiogroup' : 'group' });
+    S.perm.forEach(function (orig, d) {
+      var b = h('button', { class: 'opt', type: 'button', role: q.t === 's' ? 'radio' : 'checkbox', 'aria-checked': 'false', onclick: function () { pick(d); } },
+        h('span', { class: 'cur' }, '▶'), h('span', { class: 'key' }, L[d]), h('span', { class: 'tx' }, q.o[orig]));
+      UI.opts.push(b); body.append(b);
+    });
+  } else if (q.t === 'a') {
+    body = h('div', { class: 'opts', role: 'radiogroup' });
+    OA.forEach(function (t, d) {
+      var b = h('button', { class: 'opt', type: 'button', role: 'radio', 'aria-checked': 'false', onclick: function () { pick(d); } },
+        h('span', { class: 'cur' }, '▶'), h('span', { class: 'key' }, L[d]), h('span', { class: 'tx' }, t));
+      UI.opts.push(b); body.append(b);
+    });
+  } else if (q.t === 'j') {
+    body = h('div', { class: 'tf' });
+    q.L.forEach(function (l, i) {
+      var sel = h('select', { 'aria-label': 'Pasangan nomor ' + (i + 1), onchange: function () { S.ans[i] = sel.value === '' ? null : +sel.value; upd(); } },
+        h('option', { value: '' }, '— pilih pasangan —'), q.O.map(function (o, k) { return h('option', { value: k }, o); }));
+      var note = h('p', { class: 'note', hidden: true });
+      var row = h('div', { class: 'tf-row' }, h('div', { class: 's' }, h('b', { style: 'color:var(--gold);font-weight:400' }, (i + 1) + '. '), l[0]), h('div', {}, sel, note));
+      UI.rows.push({ row: row, sel: sel, note: note }); body.append(row);
+    });
+  } else if (q.t === 'k') {
+    body = h('div', { class: 'tf' });
+    q.S.forEach(function (s, i) {
+      var bs = q.C.map(function (cn, k) {
+        return h('button', { class: 'cmd', type: 'button', 'aria-pressed': 'false', onclick: function () {
+          if (S.done || S.busy) return; S.ans[i] = k; bs.forEach(function (b, m) { b.setAttribute('aria-pressed', m === k ? 'true' : 'false'); }); upd(); } }, cn);
+      });
+      var row = h('div', { class: 'tf-row' }, h('div', { class: 's' }, s[0]), h('div', { class: 'cmds' }, bs));
+      UI.rows.push({ row: row, bs: bs }); body.append(row);
+    });
+  } else {
+    var inp = h('input', { type: 'text', id: 'ans', maxlength: '60', autocomplete: 'off', placeholder: 'Ketik jawabanmu', 'aria-label': 'Jawaban isian',
+      oninput: function () { S.txt = inp.value; upd(); }, onkeydown: function (e) { if (e.key === 'Enter' && !UI.submit.disabled) check(); } });
+    UI.inp = inp; body = h('div', {}, inp);
+  }
+  c.append(body);
+
+  UI.fb = h('div', { 'aria-live': 'polite' });
+  UI.submit = h('button', { class: 'btn', type: 'button', disabled: true, onclick: check }, '⚔ Serang!');
+  UI.pot = h('button', { class: 'btn alt', type: 'button', onclick: usePotion }, '🧪 Ramuan');
+  UI.scr = (q.t === 's' || q.t === 'a') ? h('button', { class: 'btn alt', type: 'button', onclick: useScroll }, '📜 50:50') : null;
+  c.append(h('div', { class: 'acts' }, h('div', { class: 'items' }, UI.pot, UI.scr), UI.submit), UI.fb);
+  itemState();
+  if (!first) { var top = $('.hud'); if (top) window.scrollTo(0, 0); }
+}
+function itemState() {
+  if (!UI.pot) return;
+  UI.pot.disabled = S.potions <= 0 || S.hp >= 100 || S.over || S.busy;
+  if (UI.scr) UI.scr.disabled = S.scrolls <= 0 || S.hinted || S.done || S.busy;
+}
+function ready(q) {
+  if (q.t === 'j' || q.t === 'k') return S.ans.every(function (v) { return v !== null; });
+  if (q.t === 'i') return !!S.txt.trim();
+  if (q.t === 'm') return S.sels.length > 0;
+  return S.sel !== null;
+}
+function upd() { UI.submit.disabled = S.done || S.busy || !ready(cur()); }
+function pick(d) {
+  if (S.done || S.busy) return;
+  var q = cur(); if (UI.opts[d].classList.contains('gone')) return;
+  if (q.t === 'm') { var k = S.sels.indexOf(d); if (k >= 0) S.sels.splice(k, 1); else S.sels.push(d); }
+  else S.sel = d;
+  UI.opts.forEach(function (b, j) { b.setAttribute('aria-checked', (q.t === 'm' ? S.sels.indexOf(j) >= 0 : S.sel === j) ? 'true' : 'false'); });
+  upd();
+}
+function usePotion() {
+  if (S.potions <= 0 || S.hp >= 100 || S.over) return;
+  S.potions--; S.hp = Math.min(100, S.hp + 30);
+  var H = ctr($('#hero-spr')); ring(H, { color: '#6cf0a5', to: 2.4 }); floatT('+30 HP', H, '#3ce27a', true);
+  hud(); itemState();
+}
+function useScroll() {
+  var q = cur(); if (S.scrolls <= 0 || S.hinted || S.done || S.busy) return;
+  var good = q.t === 'a' ? q.c : null;
+  var wrong = range(UI.opts.length).filter(function (d) {
+    var isRight = q.t === 'a' ? d === q.c : S.perm[d] === q.c;
+    return !isRight && d !== S.sel;
+  });
+  shuffle(wrong).slice(0, 2).forEach(function (d) { UI.opts[d].classList.add('gone'); UI.opts[d].setAttribute('aria-hidden', 'true'); });
+  S.scrolls--; S.hinted = true; hud(); itemState();
+}
+
+/* ====== jawaban ====== */
+function origList(q, ds) { return ds.map(function (d) { return S.perm[d]; }); }
+async function check() {
+  if (S.done || S.busy) return;
+  var q = cur(); if (!ready(q)) return;
+  S.busy = true; S.done = false; UI.submit.disabled = true; itemState();
+  var secs = (Date.now() - S.qt) / 1000, f = 0, u = '';
+  if (q.t === 's') {
+    var o = S.perm[S.sel]; f = o === q.c ? 1 : 0; u = L[S.sel] + '. ' + q.o[o];
+    UI.opts.forEach(function (b, d) { b.disabled = true; var od = S.perm[d]; if (od === q.c) b.classList.add('correct'); else if (d === S.sel) b.classList.add('wrong'); });
+  } else if (q.t === 'a') {
+    f = S.sel === q.c ? 1 : 0; u = L[S.sel] + '. ' + OA[S.sel];
+    UI.opts.forEach(function (b, d) { b.disabled = true; if (d === q.c) b.classList.add('correct'); else if (d === S.sel) b.classList.add('wrong'); });
+  } else if (q.t === 'm') {
+    var sel = origList(q, S.sels), hit = sel.filter(function (i) { return q.c.indexOf(i) >= 0; }).length, bad = sel.length - hit;
+    f = Math.max(0, (hit - bad) / q.c.length);
+    u = sel.slice().sort().map(function (i) { return q.o[i]; }).join(' | ');
+    UI.opts.forEach(function (b, d) { b.disabled = true; var od = S.perm[d]; if (q.c.indexOf(od) >= 0) b.classList.add('correct'); else if (S.sels.indexOf(d) >= 0) b.classList.add('wrong'); });
+  } else if (q.t === 'j') {
+    var n = 0;
+    q.L.forEach(function (l, i) { var ok = S.ans[i] === l[1]; if (ok) n++; var r = UI.rows[i]; r.row.classList.add(ok ? 'ok' : 'no'); r.sel.disabled = true;
+      if (!ok) { r.note.hidden = false; r.note.textContent = 'Pasangan benar: ' + q.O[l[1]]; } });
+    f = n / q.L.length; u = q.L.map(function (l, i) { return l[0] + ' → ' + q.O[S.ans[i]]; }).join('; ');
+  } else if (q.t === 'k') {
+    var m = 0;
+    q.S.forEach(function (s, i) { var r = UI.rows[i], ok = S.ans[i] === s[1]; if (ok) m++; r.row.classList.add(ok ? 'ok' : 'no');
+      r.bs.forEach(function (b) { b.disabled = true; }); r.bs[s[1]].classList.add('correct'); if (!ok) r.bs[S.ans[i]].classList.add('wrong'); });
+    f = m / q.S.length; u = q.S.map(function (s, i) { return s[0] + ' → ' + q.C[S.ans[i]]; }).join('; ');
+  } else {
+    var ok2 = q.ans.map(norm).indexOf(norm(S.txt)) >= 0; f = ok2 ? 1 : 0; u = S.txt.trim();
+    UI.inp.disabled = true; UI.inp.className = ok2 ? 'ok' : 'no';
+  }
+
+  var H = S.hero, full = f === 1, base = Math.round(f * 10), speed = 0, combo = 0, crit = false, heal = 0;
+  if (full) {
+    S.streak++; S.full++;
+    if (!S.hinted && secs <= 25) speed = 2;
+    if (S.streak >= 3) combo = H.id === 'penyair' ? 3 : 2;
+    if (H.id === 'ninja' && Math.random() < 0.3) crit = true;
+    if (H.id === 'tabib') heal = 6;
+    if (S.streak > S.best) S.best = S.streak;
+  } else S.streak = 0;
+  var before = S.score; S.score = Math.min(MAXSCORE, S.score + base + speed + combo + (crit ? 2 : 0)); var pts = S.score - before;
+  S.base += base;
+
+  var dmg = 0, shielded = false;
+  if (f < 1) {
+    dmg = Math.max(1, Math.round((q.boss ? 25 : 15) * (1 - f)));
+    if (H.id === 'ksatria') dmg = Math.max(1, Math.round(dmg * 0.6));
+    if (H.id === 'peri' && !S.shield[q.a]) { S.shield[q.a] = true; shielded = true; dmg = 0; }
+    S.hp = Math.max(0, S.hp - dmg);
+  }
+  if (heal) S.hp = Math.min(100, S.hp + heal);
+  S.log.push({ q: q, f: f, u: u, pts: pts });
+
+  await playTurn({ f: f, full: full, crit: crit, dmg: dmg, shielded: shielded, heal: heal, boss: !!q.boss });
+  S.done = true; S.busy = false;
+  if (S.hp <= 0) S.over = true;
+  hud(); itemState();
+  feedback(q, f, pts, { base: base, speed: speed, combo: combo, crit: crit, heal: heal, dmg: dmg, shielded: shielded });
+}
+
+async function playTurn(r) {
+  var H = S.hero, es = $('#e-spr'), hs = $('#hero-spr');
+  if (r.f > 0) {
+    banner('✦ ' + H.skill + (r.crit ? ' · KRITIKAL!' : '') + ' ✦', 1100);
+    if (reduced) await wait(250); else await HFX[H.id](r.crit);
+    var E = ctr(es), n = Math.round(r.f * (180 + Math.random() * 60)) * (r.crit ? 2 : 1);
+    floatT('-' + n, E, r.crit ? '#ff9b2f' : '#fff', r.crit);
+    shakeUnit('#foe');
+    $('#e-hp').style.width = Math.round((1 - r.f) * 100) + '%';
+    if (r.heal) floatT('+' + r.heal + ' HP', ctr(hs), '#3ce27a');
+    if (r.full) {
+      await wait(280);
+      if (!reduced) es.animate([{ opacity: 1, transform: 'scale(1) rotate(0)' }, { opacity: 0, transform: 'scale(.3) rotate(30deg)' }], { duration: 520, fill: 'forwards' });
+      burst(ctr(es), '💫', 6, 40);
+    }
+    await wait(r.full ? 650 : 450);
+  }
+  if (r.f < 1) {
+    var Hc = ctr(hs), Ec = ctr(es);
+    if (!reduced) lunge('#foe', -(Ec.x - Hc.x - 70));
+    await wait(reduced ? 150 : 330);
+    if (r.shielded) { ring(Hc, { color: '#7fd8ff', size: 90, to: 1.4, dur: 700 }); floatT('TAMENG!', Hc, '#7fd8ff', true); }
+    else { shakeUnit('#hero', 'drop-shadow(0 0 8px #ff3040) brightness(1.7)'); floatT('-' + r.dmg, Hc, '#ff5468', true);
+      var s = $('#scene'); if (!reduced) s.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(4px,-2px)' }, { transform: 'translate(0,0)' }], { duration: 260 }); }
+    await wait(reduced ? 150 : 600);
+  }
+}
+
+function corr(q) {
+  if (q.t === 's') return h('p', {}, q.o[q.c]);
+  if (q.t === 'a') return h('p', {}, h('b', {}, L[q.c] + '. '), OA[q.c]);
+  if (q.t === 'm') return h('ul', {}, q.c.map(function (i) { return h('li', {}, q.o[i]); }));
+  if (q.t === 'j') return h('ul', {}, q.L.map(function (l) { return h('li', {}, l[0] + ' → ', h('b', {}, q.O[l[1]])); }));
+  if (q.t === 'k') return h('ul', {}, q.S.map(function (s) { return h('li', {}, s[0] + ' → ', h('b', {}, q.C[s[1]])); }));
+  return h('p', {}, h('b', {}, q.d));
+}
+
+function feedback(q, f, pts, d) {
+  var cls = f === 1 ? 'ok' : f > 0 ? 'mid' : 'no';
+  var head = f === 1 ? 'Serangan berhasil! +' + pts + ' poin' : f > 0 ? 'Serangan sebagian kena. +' + pts + ' poin' : 'Serangan meleset!';
+  var info = [];
+  if (f > 0) info.push('poin dasar ' + d.base);
+  if (d.speed) info.push('bonus cepat +' + d.speed);
+  if (d.combo) info.push('bonus beruntun +' + d.combo);
+  if (d.crit) info.push('kritikal +2');
+  if (d.heal) info.push('pulih ' + d.heal + ' HP');
+  if (d.shielded) info.push('tameng menahan serangan musuh');
+  else if (d.dmg) info.push('HP −' + d.dmg);
+  var last = S.i === S.order.length - 1;
+  var next = h('button', { class: 'btn', type: 'button', onclick: nextQ }, S.over ? 'Lihat hasil' : last ? 'Lihat hasil' : '▶ Lanjut');
+  UI.fb.replaceChildren(h('div', { class: 'fb ' + cls },
+    h('h3', {}, head),
+    info.length ? h('p', { class: 'mut' }, info.join(' · ')) : null,
+    f < 1 ? h('div', {}, h('span', { class: 'tag' }, 'JAWABAN YANG BENAR'), corr(q)) : null,
+    h('div', { class: 'exp' }, h('b', {}, 'CATATAN PEMBAHASAN'), q.x)),
+    h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, next));
+  next.focus({ preventScroll: true });
+  UI.fb.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+  if (f < 1 && !reduced) { var c = $('#qcard'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
+}
+
+function nextQ() {
+  if (!S.done) return;
+  if (S.over) return gameOver();
+  if (S.i >= S.order.length - 1) return finish();
+  var q = cur(), nq = Q[S.order[S.i + 1]];
+  if (nq.a !== q.a) return interlude(q.a);
+  S.i++; renderQ();
+}
+function interlude(ai) {
+  S.lv++; S.potions++;
+  var A = AREAS[ai], N = AREAS[ai + 1];
+  var c = $('#qcard'); c.replaceChildren();
+  var go = h('button', { class: 'btn big', type: 'button', onclick: function () { S.i++; renderQ(); } }, '▶ Menuju ' + N.name);
+  c.append(h('div', { class: 'stack inter' },
+    h('p', { class: 'big' }, 'AREA BERSIH!'),
+    h('p', {}, A.name + ' sudah aman. Pahlawanmu naik ke ', h('b', { style: 'color:var(--gold);font-weight:400' }, 'Lv ' + S.lv), '.'),
+    h('div', { class: 'loot' }, h('span', {}, '🧪 Ramuan +1'), h('span', {}, 'HP ' + S.hp + '/100')),
+    h('p', { class: 'mut' }, 'Berikutnya: ' + N.name + ' (' + N.el + ').'), go));
+  hud(); $('#foe').style.visibility = 'hidden';
+  banner('AREA BERSIH · Lv ' + S.lv, 1400);
+  go.focus({ preventScroll: true });
+}
+function gameOver() {
+  var c = $('#qcard'); c.replaceChildren();
+  var go = h('button', { class: 'btn big', type: 'button', onclick: finish }, '▶ Lihat hasil');
+  c.append(h('div', { class: 'stack inter lose' },
+    h('p', { class: 'big' }, 'KAMU GUGUR'),
+    h('p', {}, S.hero.name + ' tumbang di ' + AREAS[cur().a].name + ' setelah ' + S.log.length + ' dari ' + S.order.length + ' soal.'),
+    h('p', { class: 'mut' }, 'Baca catatan pembahasan di halaman hasil, lalu coba lagi dengan strategi baru.'), go));
+  banner('GAME OVER', 1400);
+  if (!reduced) $('#hero-spr').animate([{ transform: 'rotate(0)', opacity: 1 }, { transform: 'rotate(80deg) translateY(18px)', opacity: .5 }], { duration: 700, fill: 'forwards' });
+  go.focus({ preventScroll: true });
+}
+
+/* ====== hasil ====== */
+function rank(n, over) {
+  if (over) return 'Pahlawan yang Gugur';
+  return n >= 90 ? 'Legenda Garuda' : n >= 75 ? 'Pahlawan Nusantara' : n >= 60 ? 'Ksatria Pancasila' : 'Petualang Pemula';
+}
+function finish() {
+  clearInterval(timer);
+  $('#foe').style.visibility = '';
+  var n = S.order.length, total = Date.now() - S.t0;
+  S.nilai = Math.round(S.base / (n * 10) * 100);
+  var r = $('#s-result'); r.replaceChildren();
+  var box = function (l, v) { return h('div', { class: 'box' }, h('small', {}, l), h('b', {}, v)); };
+  var scoreEl = h('div', { class: 'score' }, '0');
+  r.append(h('div', { class: 'win stack' },
+    h('div', { class: 'res-top' }, h('span', { class: 'port' }, S.hero.ico),
+      h('div', {}, h('p', { class: 'eyebrow' }, S.over ? 'GAME OVER' : 'PETUALANGAN SELESAI'), h('h2', {}, rank(S.nilai, S.over)), h('p', {}, S.name + ' · ' + S.hero.name))),
+    h('div', {}, h('p', { class: 'eyebrow' }, 'SKOR TOTAL'), scoreEl),
+    h('div', { class: 'g4' }, box('NILAI 0–100', S.nilai), box('WAKTU', fmt(total)), box('BENAR PENUH', S.full + '/' + n), box('COMBO TERBAIK', S.best), box('HP AKHIR', S.hp + '/100'), box('LEVEL', S.lv)),
+    h('p', { class: 'mut' }, 'Skor memuat bonus dan dibatasi ' + MAXSCORE + '. Nilai hanya dihitung dari poin dasar ' + n + ' soal.'),
+    h('div', { class: 'row' },
+      h('button', { class: 'btn', type: 'button', onclick: startGame }, '▶ Petualangan baru'),
+      h('button', { class: 'btn alt', type: 'button', onclick: function () { board($('#lb-start')); show('start'); } }, 'Menu awal'))));
+  r.append(h('div', { class: 'win stack' }, h('div', { class: 'row' }, h('h2', {}, 'Papan pahlawan'), liveBadge()), h('p', { class: 'mut', id: 'sv' }), h('div', { id: 'lb-res' })));
+
+  var g = {};
+  AREAS.forEach(function (A, ai) { g[ai] = { n: A.name, f: 0, t: 0 }; });
+  S.log.forEach(function (l) { var o = g[l.q.a]; o.t++; o.f += l.f; });
+  r.append(h('div', { class: 'win stack' }, h('h2', {}, 'Penguasaan per area'),
+    h('div', { class: 'bk' }, Object.keys(g).filter(function (k) { return g[k].t > 0; }).map(function (k) {
+      var o = g[k]; return h('div', { class: 'bk-row' }, h('span', {}, o.n), h('div', { class: 't' }, h('i', { style: 'width:' + Math.round(o.f / o.t * 100) + '%' })), h('span', {}, (Math.round(o.f * 10) / 10) + '/' + o.t));
+    }))));
+
+  var wrong = S.log.filter(function (l) { return l.f < 1; }).length;
+  var list = h('div', { class: 'rv-list' });
+  S.log.forEach(function (l, i) {
+    var st = l.f === 1 ? ['ok', 'BENAR'] : l.f > 0 ? ['mid', 'SEBAGIAN'] : ['no', 'SALAH'], q = l.q;
+    var d = h('details', { class: 'rv' }, h('summary', {}, h('span', { class: 'sn' }, (i + 1) + '.'), h('span', { class: 'sx' }, (q.q || 'Sebab-akibat').length > 80 ? (q.q || '').slice(0, 78) + '…' : (q.q || 'Soal sebab-akibat')), h('span', { class: 'bd ' + st[0] }, st[1])),
+      h('div', { class: 'rb' },
+        q.pas ? h('p', {}, q.pas) : null,
+        q.t === 'a' ? h('p', {}, h('b', { style: 'color:var(--gold);font-weight:400' }, 'Pernyataan: '), q.P, ' ', h('b', { style: 'color:var(--gold);font-weight:400' }, 'Sebab: '), q.R) : h('p', {}, h('b', { style: 'color:var(--gold);font-weight:400' }, 'Soal: '), q.q),
+        h('p', {}, h('b', { style: 'color:var(--gold);font-weight:400' }, 'Jawabanmu: '), l.u || '(kosong)'),
+        h('div', {}, h('b', { style: 'color:var(--gold);font-weight:400' }, 'Jawaban yang benar:'), corr(q)),
+        h('p', {}, h('b', { style: 'color:var(--gold);font-weight:400' }, 'Pembahasan: '), q.x)));
+    if (l.f < 1) d.open = true; list.append(d);
+  });
+  var tgl = h('button', { class: 'btn alt', type: 'button', onclick: function () { list.hidden = !list.hidden; tgl.textContent = list.hidden ? 'Tampilkan catatan' : 'Sembunyikan catatan'; } }, 'Sembunyikan catatan');
+  r.append(h('div', { class: 'win stack' }, h('h2', {}, 'Catatan pembahasan'),
+    h('p', { class: 'mut' }, wrong ? wrong + ' soal belum benar penuh, dibuka otomatis.' : 'Semua jawabanmu benar penuh. Catatan tetap bisa dibuka.'),
+    h('div', { class: 'row' }, tgl), list));
+
+  show('result'); save();
+  var target = S.score;
+  if (reduced || !target) scoreEl.textContent = target;
+  else { var t0 = performance.now(); (function step(t) { var p = Math.min(1, (t - t0) / 900); scoreEl.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); })(t0); }
+}
+function save() {
+  var st = $('#sv');
+  if (!ON) { st.textContent = 'Skor tidak dikirim karena Supabase belum dikonfigurasi.'; board($('#lb-res')); return; }
+  st.textContent = 'Mengirim skor ke papan pahlawan…';
+  api(CFG.table, { method: 'POST', headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ nama: S.name, avatar: S.hero.ico, skor: S.score, nilai: S.nilai, benar: S.full, total: S.order.length }) })
+    .then(function (r) { st.textContent = 'Skormu sudah masuk papan pahlawan.'; board($('#lb-res'), r[0] && r[0].id); })
+    .catch(function (e) { st.textContent = 'Gagal mengirim skor (' + e.message + '). '; st.append(h('button', { class: 'btn alt', type: 'button', style: 'padding:4px 12px;font-size:.9rem', onclick: save }, 'Coba lagi')); board($('#lb-res')); });
+}
+
+/* ====== pengendali ====== */
+$('#go').addEventListener('click', startGame);
+$('#nm').addEventListener('keydown', function (e) { if (e.key === 'Enter') startGame(); });
+document.addEventListener('keydown', function (e) {
+  if ($('#s-quiz').hidden || !S || e.ctrlKey || e.metaKey || e.altKey) return;
+  var q = cur(), a = document.activeElement;
+  if (/^[1-5]$/.test(e.key) && !S.done && !S.busy && UI.opts && UI.opts.length && !(a && a.tagName === 'INPUT')) { pick(+e.key - 1); return; }
+  if (e.key !== 'Enter') return;
+  if (a && (a.tagName === 'BUTTON' || a.tagName === 'INPUT' || a.tagName === 'SELECT')) return;
+  if (S.done) nextQ(); else if (UI.submit && !UI.submit.disabled) check();
+});
+})();
+</script>
+</body>
+</html>
